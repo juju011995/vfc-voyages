@@ -14,6 +14,8 @@ import type {
   MapSettings,
   RouteSegment,
   Stop,
+  Task,
+  TaskTag,
 } from "./types";
 
 // Un seul object store IndexedDB pour toute l'app : les clés préfixées par
@@ -32,6 +34,9 @@ const BUDGET_PLAN_PREFIX = "budget-plan:";
 const EXPENSE_PREFIX = "expense:";
 const BUDGET_SETTINGS_KEY = "budget-settings";
 const EXCHANGE_RATES_KEY = "exchange-rates";
+
+const TASK_TAG_PREFIX = "task-tag:";
+const TASK_PREFIX = "task:";
 
 function stopKey(id: string) {
   return `${STOPS_PREFIX}${id}`;
@@ -288,4 +293,115 @@ export async function getExchangeRates(): Promise<ExchangeRates | undefined> {
 
 export async function saveExchangeRates(rates: ExchangeRates): Promise<void> {
   await set(EXCHANGE_RATES_KEY, rates, store);
+}
+
+// ---------------------------------------------------------------------------
+// Module Tâches
+
+const DEFAULT_TASK_TAG_NAMES = ["Administratif", "Cellule", "Loki", "Van/Hilux"];
+
+function taskTagKey(id: string) {
+  return `${TASK_TAG_PREFIX}${id}`;
+}
+
+function taskKey(id: string) {
+  return `${TASK_PREFIX}${id}`;
+}
+
+async function readTaskTagsRaw(): Promise<TaskTag[]> {
+  const allKeys = await keys(store);
+  const tagKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(TASK_TAG_PREFIX),
+  );
+  const tags = await Promise.all(tagKeys.map((k) => get<TaskTag>(k, store)));
+  return tags
+    .filter((t): t is TaskTag => Boolean(t))
+    .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+async function seedDefaultTaskTags(): Promise<TaskTag[]> {
+  const now = Date.now();
+  const defaults: TaskTag[] = DEFAULT_TASK_TAG_NAMES.map((name) => ({
+    id: crypto.randomUUID(),
+    name,
+    isDefault: true,
+    createdAt: now,
+  }));
+  await Promise.all(defaults.map((t) => set(taskTagKey(t.id), t, store)));
+  return defaults;
+}
+
+/**
+ * Fusionne les tags en double (même nom, à la casse/espaces près) : conserve
+ * le plus ancien, reporte les tâches qui pointent vers les doublons, puis les
+ * supprime. Même correctif que pour les catégories du Budget (cf.
+ * dedupeCategories) contre un double appel concurrent de seedDefaultTaskTags.
+ */
+async function dedupeTaskTags(tags: TaskTag[]): Promise<TaskTag[]> {
+  const groups = new Map<string, TaskTag[]>();
+  for (const t of tags) {
+    const key = t.name.trim().toLowerCase();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(t);
+  }
+
+  const duplicateGroups = Array.from(groups.values()).filter((g) => g.length > 1);
+  if (duplicateGroups.length === 0) return tags;
+
+  const tasks = await listTasks();
+
+  for (const group of duplicateGroups) {
+    const [keeper, ...duplicates] = [...group].sort(
+      (a, b) => a.createdAt - b.createdAt,
+    );
+
+    for (const dup of duplicates) {
+      const affectedTasks = tasks.filter((t) => t.tagId === dup.id);
+      await Promise.all(
+        affectedTasks.map((t) => saveTask({ ...t, tagId: keeper.id })),
+      );
+      await del(taskTagKey(dup.id), store);
+    }
+  }
+
+  return readTaskTagsRaw();
+}
+
+// Empêche deux appels concurrents (ex. double montage d'effet en React
+// StrictMode) de semer chacun leur propre jeu de tags par défaut.
+let taskTagsSeedPromise: Promise<TaskTag[]> | null = null;
+
+/** Liste les tags de tâche, en créant les tags par défaut au premier appel. */
+export async function listTaskTags(): Promise<TaskTag[]> {
+  const existing = await readTaskTagsRaw();
+
+  if (existing.length === 0) {
+    if (!taskTagsSeedPromise) {
+      taskTagsSeedPromise = seedDefaultTaskTags();
+    }
+    return taskTagsSeedPromise;
+  }
+
+  return dedupeTaskTags(existing);
+}
+
+export async function saveTaskTag(tag: TaskTag): Promise<void> {
+  await set(taskTagKey(tag.id), tag, store);
+}
+
+export async function listTasks(): Promise<Task[]> {
+  const allKeys = await keys(store);
+  const taskKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(TASK_PREFIX),
+  );
+  const tasks = await Promise.all(taskKeys.map((k) => get<Task>(k, store)));
+  return tasks.filter((t): t is Task => Boolean(t));
+}
+
+export async function saveTask(task: Task): Promise<void> {
+  await set(taskKey(task.id), task, store);
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  await del(taskKey(id), store);
 }

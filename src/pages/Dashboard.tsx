@@ -6,17 +6,21 @@ import {
   listExpenses,
   listBudgetPlans,
   getBudgetSettings,
+  listTasks,
 } from "../lib/db";
-import type { BudgetPlan, BudgetSettings, Expense, RouteSegment, Stop } from "../lib/types";
+import type { BudgetPlan, BudgetSettings, Expense, RouteSegment, Stop, Task } from "../lib/types";
+import { countTasks } from "../lib/taskCalc";
 import { statusColor } from "../components/map/mapColors";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
 import { BudgetSummaryCard } from "../components/budget/BudgetSummaryCard";
+import { TaskSummaryCard } from "../components/tasks/TaskSummaryCard";
 import "./Dashboard.css";
 
 interface DashboardProps {
   onOpenCarte: () => void;
   onOpenBudget: () => void;
+  onOpenTaches: () => void;
 }
 
 function currentMonthKey(): string {
@@ -32,7 +36,7 @@ function monthLabel(month: string): string {
   });
 }
 
-export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
+export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches }: DashboardProps) {
   const { resolvedTheme } = useTheme();
   const palette = getPalette(resolvedTheme);
   const [stops, setStops] = useState<Stop[]>([]);
@@ -40,6 +44,7 @@ export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budgetPlans, setBudgetPlans] = useState<BudgetPlan[]>([]);
   const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,10 +73,16 @@ export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
         setBudgetSettings(settings);
       }
     })();
+    (async () => {
+      const loadedTasks = await listTasks();
+      if (!cancelled) setTasks(loadedTasks);
+    })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const taskCounts = countTasks(tasks);
 
   const visited = stops.filter((s) => s.status === "visite").length;
   const totalKm = segments.reduce((sum, s) => sum + s.distanceMeters, 0) / 1000;
@@ -173,8 +184,16 @@ export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
         )}
       </button>
 
+      <button
+        type="button"
+        className="dashboard__task-card"
+        onClick={onOpenTaches}
+        aria-label="Ouvrir le module Tâches"
+      >
+        <TaskSummaryCard counts={taskCounts} />
+      </button>
+
       <div className="dashboard__grid">
-        <PlaceholderCard title="Tâches" text="Module à venir" />
         <PlaceholderCard title="Loki" text="Module à venir" />
         <PlaceholderCard title="Statistiques" text="Module à venir" />
       </div>

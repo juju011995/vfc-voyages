@@ -1,28 +1,41 @@
 import { useState } from "react";
-import type { Category } from "../../lib/types";
-import "./CategoryManager.css";
+import "./TagManager.css";
 
-interface CategoryManagerProps {
-  categories: Category[];
+export interface TaggableItem {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  archived?: boolean;
+}
+
+interface TagManagerProps<T extends TaggableItem> {
+  items: T[];
+  addPlaceholder: string;
   onAdd: (name: string) => void;
   onRename: (id: string, name: string) => void;
   onArchive: (id: string) => void;
-  /** Clic principal sur la pastille : filtre le tableau des dépenses sur cette catégorie. */
+  /** Clic principal sur la pastille : filtre la liste liée (dépenses, tâches…) sur cet item. */
   onFilter: (id: string) => void;
 }
 
-export function CategoryManager({
-  categories,
+/**
+ * Liste de tags/catégories extensible et réutilisable entre modules (Budget,
+ * Tâches…) : clic sur la pastille = filtre, icône crayon = renommage,
+ * archivage réservé aux items non fournis par défaut.
+ */
+export function TagManager<T extends TaggableItem>({
+  items,
+  addPlaceholder,
   onAdd,
   onRename,
   onArchive,
   onFilter,
-}: CategoryManagerProps) {
+}: TagManagerProps<T>) {
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
 
-  const visible = categories.filter((c) => !c.archived);
+  const visible = items.filter((item) => !item.archived);
 
   function handleAdd() {
     const trimmed = newName.trim();
@@ -31,9 +44,9 @@ export function CategoryManager({
     setNewName("");
   }
 
-  function startEdit(category: Category) {
-    setEditingId(category.id);
-    setEditingName(category.name);
+  function startEdit(item: T) {
+    setEditingId(item.id);
+    setEditingName(item.name);
   }
 
   function commitEdit() {
@@ -44,11 +57,11 @@ export function CategoryManager({
   }
 
   return (
-    <div className="category-manager">
-      <ul className="category-manager__list">
-        {visible.map((category) => (
-          <li key={category.id} className="category-manager__item">
-            {editingId === category.id ? (
+    <div className="tag-manager">
+      <ul className="tag-manager__list">
+        {visible.map((item) => (
+          <li key={item.id} className="tag-manager__item">
+            {editingId === item.id ? (
               <input
                 type="text"
                 value={editingName}
@@ -60,27 +73,27 @@ export function CategoryManager({
             ) : (
               <button
                 type="button"
-                className="category-manager__name"
-                aria-label={`Filtrer les dépenses sur ${category.name}`}
-                onClick={() => onFilter(category.id)}
+                className="tag-manager__name"
+                aria-label={`Filtrer sur ${item.name}`}
+                onClick={() => onFilter(item.id)}
               >
-                {category.name}
+                {item.name}
               </button>
             )}
             <button
               type="button"
-              className="category-manager__edit"
-              aria-label={`Renommer ${category.name}`}
-              onClick={() => startEdit(category)}
+              className="tag-manager__edit"
+              aria-label={`Renommer ${item.name}`}
+              onClick={() => startEdit(item)}
             >
               ✎
             </button>
-            {!category.isDefault && (
+            {!item.isDefault && (
               <button
                 type="button"
-                className="category-manager__archive"
-                aria-label={`Archiver ${category.name}`}
-                onClick={() => onArchive(category.id)}
+                className="tag-manager__archive"
+                aria-label={`Archiver ${item.name}`}
+                onClick={() => onArchive(item.id)}
               >
                 ×
               </button>
@@ -89,10 +102,10 @@ export function CategoryManager({
         ))}
       </ul>
 
-      <div className="category-manager__add">
+      <div className="tag-manager__add">
         <input
           type="text"
-          placeholder="Nouvelle catégorie…"
+          placeholder={addPlaceholder}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}

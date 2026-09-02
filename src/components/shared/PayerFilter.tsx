@@ -1,6 +1,6 @@
 import type { Palette } from "../../theme/palette";
 import type { Payer } from "../../lib/types";
-import { PersonBadge } from "../shared/PersonBadge";
+import { PersonBadge } from "./PersonBadge";
 import "./PayerFilter.css";
 
 export type PayerFilterValue = Payer | "tous";

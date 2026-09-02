@@ -1,0 +1,104 @@
+.taches-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+  padding-bottom: 24px;
+}
+
+.taches-page__loading {
+  padding-top: 40px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.taches-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.taches-page__tags-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--color-action);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.taches-page__mobile-tabs {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.taches-page__mobile-tabs button {
+  flex: 1;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 10px 6px;
+  cursor: pointer;
+}
+
+.taches-page__mobile-tabs button.is-active {
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+}
+
+.taches-page__board {
+  display: block;
+}
+
+.taches-page__column-wrap {
+  display: none;
+}
+
+.taches-page__column-wrap--active-mobile {
+  display: block;
+}
+
+.taches-page__editor-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  padding: 10px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 860px) {
+  .taches-page__mobile-tabs {
+    display: none;
+  }
+
+  .taches-page__board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .taches-page__column-wrap {
+    display: block;
+  }
+
+  .taches-page__editor-overlay {
+    position: static;
+    max-width: 380px;
+    max-height: none;
+    padding: 0;
+    margin-top: 4px;
+  }
+}

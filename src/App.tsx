@@ -3,6 +3,7 @@ import { AppShell, type TabId } from "./components/layout/AppShell";
 import { Dashboard } from "./pages/Dashboard";
 import { CartePage } from "./pages/CartePage";
 import { BudgetPage } from "./pages/BudgetPage";
+import { TachesPage } from "./pages/TachesPage";
 import { ComingSoon } from "./pages/ComingSoon";
 
 const TAB_TITLES: Record<TabId, string> = {
@@ -26,11 +27,12 @@ function App() {
         <Dashboard
           onOpenCarte={() => setActiveTab("carte")}
           onOpenBudget={() => setActiveTab("budget")}
+          onOpenTaches={() => setActiveTab("taches")}
         />
       )}
       {activeTab === "carte" && <CartePage />}
       {activeTab === "budget" && <BudgetPage />}
-      {activeTab === "taches" && <ComingSoon moduleName="Tâches" />}
+      {activeTab === "taches" && <TachesPage />}
       {activeTab === "plus" && <ComingSoon moduleName="Loki, Statistiques & Paramètres" />}
     </AppShell>
   );

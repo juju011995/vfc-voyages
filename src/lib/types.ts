@@ -116,3 +116,43 @@ export interface ExchangeRates {
   rates: Record<string, number>;
   fetchedAt: number;
 }
+
+// ---------------------------------------------------------------------------
+// Module Tâches
+//
+// Liaisons croisées prévues pour de futurs modules non construits ici :
+// - Loki : lira les tâches via getTasksByTagName(tasks, tags, "Loki")
+//   (src/lib/taskCalc.ts), donnée unique affichée à deux endroits.
+// - Matériel : Task.linkedMaterielItemId réserve le lien vers un item ;
+//   la synchronisation de statut viendra avec ce module.
+// - Calendrier : lira les échéances via listUpcomingDeadlines(tasks)
+//   (src/lib/taskCalc.ts) plutôt que de dupliquer la saisie.
+
+export type TaskStatus = "a-faire" | "en-cours" | "fait";
+
+export type TaskPriority = "urgent" | "normal" | "pas-presse";
+
+export interface TaskTag {
+  id: string;
+  name: string;
+  /** Tags fournis par défaut — non supprimables, seulement renommables. */
+  isDefault: boolean;
+  archived?: boolean;
+  createdAt: number;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  tagId: string;
+  assignee: Payer;
+  /** Date d'échéance, format ISO (YYYY-MM-DD), optionnelle. */
+  dueDate?: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  /** Réservé pour le futur module Matériel — non utilisé pour l'instant. */
+  linkedMaterielItemId?: string;
+  createdAt: number;
+  updatedAt: number;
+}

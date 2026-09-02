@@ -1,0 +1,28 @@
+.task-summary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 14px;
+}
+
+.task-summary__line {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.task-summary__line strong {
+  font-family: var(--font-heading);
+}
+
+.task-summary__sub {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.task-summary__sub--alert {
+  color: var(--color-alert);
+  font-weight: 700;
+}

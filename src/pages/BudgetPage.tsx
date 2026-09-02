@@ -20,11 +20,11 @@ import type { BudgetPlan, BudgetSettings, Category, Expense } from "../lib/types
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
 import { BudgetSummaryCard } from "../components/budget/BudgetSummaryCard";
-import { PayerFilter, type PayerFilterValue } from "../components/budget/PayerFilter";
-import { CategoryFilter, type CategoryFilterValue } from "../components/budget/CategoryFilter";
+import { PayerFilter, type PayerFilterValue } from "../components/shared/PayerFilter";
+import { TagFilter, type TagFilterValue } from "../components/shared/TagFilter";
+import { TagManager } from "../components/shared/TagManager";
 import { ExpenseForm } from "../components/budget/ExpenseForm";
 import { ExpenseTable } from "../components/budget/ExpenseTable";
-import { CategoryManager } from "../components/budget/CategoryManager";
 import { BudgetPlanEditor } from "../components/budget/BudgetPlanEditor";
 import { WeeklyRecap } from "../components/budget/WeeklyRecap";
 import { FuelEstimateCard } from "../components/budget/FuelEstimateCard";
@@ -59,7 +59,7 @@ export function BudgetPage() {
   const [loaded, setLoaded] = useState(false);
 
   const [payerFilter, setPayerFilter] = useState<PayerFilterValue>("tous");
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterValue>("toutes");
+  const [categoryFilter, setCategoryFilter] = useState<TagFilterValue>("tous");
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
   const [planMonth, setPlanMonth] = useState(currentMonthKey());
@@ -113,7 +113,7 @@ export function BudgetPage() {
     () =>
       expenses
         .filter((e) => payerFilter === "tous" || e.payer === payerFilter)
-        .filter((e) => categoryFilter === "toutes" || e.categoryId === categoryFilter),
+        .filter((e) => categoryFilter === "tous" || e.categoryId === categoryFilter),
     [expenses, payerFilter, categoryFilter],
   );
 
@@ -327,10 +327,11 @@ export function BudgetPage() {
             </button>
           </div>
 
-          <CategoryFilter
-            categories={categories}
+          <TagFilter
+            items={categories}
             value={categoryFilter}
             onChange={setCategoryFilter}
+            allLabel="Toutes catégories"
           />
 
           {showForm && (
@@ -370,8 +371,9 @@ export function BudgetPage() {
             onSave={handleSavePlan}
           />
 
-          <CategoryManager
-            categories={categories}
+          <TagManager
+            items={categories}
+            addPlaceholder="Nouvelle catégorie…"
             onAdd={handleAddCategory}
             onRename={handleRenameCategory}
             onArchive={handleArchiveCategory}
