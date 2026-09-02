@@ -42,14 +42,27 @@
   border-radius: var(--radius-pill);
 }
 
+/* Urgent : le plus marquant des trois — pastille pleine. */
 .task-card__priority--urgent {
   background: var(--color-alert);
   color: var(--color-action-contrast);
 }
 
-.task-card__priority--calme {
-  background: var(--color-status-a-faire);
-  color: var(--color-action-contrast);
+/* Normal : intermédiaire — contour visible, sans remplissage. */
+.task-card__priority--normal {
+  background: none;
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-secondary);
+  padding: 1.5px 8px;
+}
+
+/* Pas pressé : le plus discret — simple texte, sans pastille. */
+.task-card__priority--pas-presse {
+  background: none;
+  padding: 3px 2px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  opacity: 0.75;
 }
 
 .task-card__body {

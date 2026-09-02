@@ -12,6 +12,12 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   fait: "Fait",
 };
 
+const PRIORITY_LABELS = {
+  urgent: "Urgent",
+  normal: "Normal",
+  "pas-presse": "Pas pressé",
+} as const;
+
 const STATUSES: TaskStatus[] = ["a-faire", "en-cours", "fait"];
 
 interface TaskCardProps {
@@ -53,12 +59,9 @@ export function TaskCard({ task, tag, palette, onOpen, onStatusChange }: TaskCar
           ⠿
         </button>
         {tag && <span className="task-card__tag">{tag.name}</span>}
-        {task.priority === "urgent" && (
-          <span className="task-card__priority task-card__priority--urgent">Urgent</span>
-        )}
-        {task.priority === "pas-presse" && (
-          <span className="task-card__priority task-card__priority--calme">Pas pressé</span>
-        )}
+        <span className={`task-card__priority task-card__priority--${task.priority}`}>
+          {PRIORITY_LABELS[task.priority]}
+        </span>
       </div>
 
       <button type="button" className="task-card__body" onClick={() => onOpen(task)}>
