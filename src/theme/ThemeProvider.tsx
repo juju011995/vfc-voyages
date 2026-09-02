@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-type ThemeChoice = "light" | "dark" | "system";
+export type ThemeChoice = "light" | "dark" | "system";
 
 interface ThemeContextValue {
   theme: ThemeChoice;

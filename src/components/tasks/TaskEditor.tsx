@@ -3,6 +3,7 @@ import type { Payer, Task, TaskPriority, TaskStatus, TaskTag } from "../../lib/t
 import type { Palette } from "../../theme/palette";
 import { taskStatusStage } from "../../lib/taskCalc";
 import { STATUS_STAGE_COLOR, STATUS_TEXT_ON_COLOR } from "../../lib/statusColors";
+import { useSettings } from "../../settings/SettingsProvider";
 import { PersonBadge } from "../shared/PersonBadge";
 import "./TaskEditor.css";
 
@@ -30,6 +31,7 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 };
 
 export function TaskEditor({ task, tags, palette, onClose, onSave, onDelete }: TaskEditorProps) {
+  const { settings } = useSettings();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
   const [tagId, setTagId] = useState(task.tagId);
@@ -116,7 +118,11 @@ export function TaskEditor({ task, tags, palette, onClose, onSave, onDelete }: T
               onClick={() => setAssignee(p)}
             >
               <PersonBadge payer={p} palette={palette} size={18} />
-              {p === "both" ? "Les deux" : p === "justine" ? "Justine" : "Nathan"}
+              {p === "both"
+                ? "Les deux"
+                : p === "justine"
+                  ? settings.profileNames.justine
+                  : settings.profileNames.nathan}
             </button>
           ))}
         </div>

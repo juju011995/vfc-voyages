@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { Category, Expense, Payer } from "../../lib/types";
 import { COMMON_CURRENCIES, convertToEur, getRates } from "../../lib/currency";
 import type { Palette } from "../../theme/palette";
+import { useSettings } from "../../settings/SettingsProvider";
 import { PersonBadge } from "../shared/PersonBadge";
 import "./ExpenseForm.css";
 
@@ -27,8 +28,9 @@ export function ExpenseForm({
   onCancel,
   initial,
 }: ExpenseFormProps) {
+  const { settings } = useSettings();
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
-  const [currency, setCurrency] = useState(initial?.currency ?? "EUR");
+  const [currency, setCurrency] = useState(initial?.currency ?? settings.defaultCurrency);
   const [categoryId, setCategoryId] = useState(
     initial?.categoryId ?? categories[0]?.id ?? "",
   );
@@ -170,7 +172,11 @@ export function ExpenseForm({
               onClick={() => setPayer(p)}
             >
               <PersonBadge payer={p} palette={palette} size={18} />
-              {p === "both" ? "Les deux" : p === "justine" ? "Justine" : "Nathan"}
+              {p === "both"
+                ? "Les deux"
+                : p === "justine"
+                  ? settings.profileNames.justine
+                  : settings.profileNames.nathan}
             </button>
           ))}
         </div>

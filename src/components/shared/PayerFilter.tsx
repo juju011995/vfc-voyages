@@ -1,5 +1,6 @@
 import type { Palette } from "../../theme/palette";
 import type { Payer } from "../../lib/types";
+import { useSettings } from "../../settings/SettingsProvider";
 import { PersonBadge } from "./PersonBadge";
 import "./PayerFilter.css";
 
@@ -12,6 +13,11 @@ interface PayerFilterProps {
 }
 
 export function PayerFilter({ value, onChange, palette }: PayerFilterProps) {
+  const { settings } = useSettings();
+  const initials =
+    settings.profileNames.justine.charAt(0).toUpperCase() +
+    settings.profileNames.nathan.charAt(0).toUpperCase();
+
   return (
     <div className="payer-filter" role="tablist" aria-label="Filtrer par personne">
       <button
@@ -33,7 +39,11 @@ export function PayerFilter({ value, onChange, palette }: PayerFilterProps) {
           onClick={() => onChange(p)}
         >
           <PersonBadge payer={p} palette={palette} size={16} />
-          {p === "justine" ? "Justine" : p === "nathan" ? "Nathan" : "J+N"}
+          {p === "justine"
+            ? settings.profileNames.justine
+            : p === "nathan"
+              ? settings.profileNames.nathan
+              : initials}
         </button>
       ))}
     </div>

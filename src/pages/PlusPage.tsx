@@ -2,9 +2,10 @@ import { useState } from "react";
 import { CalendarPage } from "./CalendarPage";
 import { LokiPage } from "./LokiPage";
 import { MaterielPage } from "./MaterielPage";
+import { SettingsPage } from "./SettingsPage";
 import "./PlusPage.css";
 
-type PlusSubPage = "menu" | "calendrier" | "loki" | "materiel";
+type PlusSubPage = "menu" | "calendrier" | "loki" | "materiel" | "parametres";
 
 interface PlusPageProps {
   onOpenTaches: () => void;
@@ -26,6 +27,7 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         {subPage === "calendrier" && <CalendarPage onOpenTaches={onOpenTaches} />}
         {subPage === "loki" && <LokiPage onOpenTaches={onOpenTaches} />}
         {subPage === "materiel" && <MaterielPage />}
+        {subPage === "parametres" && <SettingsPage />}
       </div>
     );
   }
@@ -59,9 +61,17 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         <span className="plus-page__menu-item-arrow">→</span>
       </button>
 
+      <button
+        type="button"
+        className="plus-page__menu-item"
+        onClick={() => setSubPage("parametres")}
+      >
+        <span>Paramètres</span>
+        <span className="plus-page__menu-item-arrow">→</span>
+      </button>
+
       <div className="plus-page__grid">
         <PlaceholderCard title="Statistiques" text="Module à venir" />
-        <PlaceholderCard title="Paramètres" text="Module à venir" />
       </div>
     </div>
   );

@@ -315,3 +315,24 @@ export interface MaterielItem {
   createdAt: number;
   updatedAt: number;
 }
+
+// ---------------------------------------------------------------------------
+// Module Paramètres
+//
+// Volontairement distinct de BudgetSettings (prix carburant, consommation) :
+// ces deux réglages restent uniquement dans le module Budget pour éviter
+// tout doublon. Les couleurs Justine=prune/Nathan=bleu ardoise (palette.ts)
+// ne sont pas concernées par ProfileNames — seul le libellé affiché change,
+// "justine"/"nathan" restent les identifiants stables utilisés partout
+// ailleurs (Payer, assignee, etc.).
+
+export interface ProfileNames {
+  justine: string;
+  nathan: string;
+}
+
+export interface AppSettings {
+  /** Devise présélectionnée pour une nouvelle dépense (module Budget) — les montants restent agrégés en euros. */
+  defaultCurrency: string;
+  profileNames: ProfileNames;
+}

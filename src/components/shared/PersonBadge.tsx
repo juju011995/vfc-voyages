@@ -1,5 +1,6 @@
 import type { Payer } from "../../lib/types";
 import type { Palette } from "../../theme/palette";
+import { useSettings } from "../../settings/SettingsProvider";
 import "./PersonBadge.css";
 
 interface PersonBadgeProps {
@@ -9,17 +10,13 @@ interface PersonBadgeProps {
   showLabel?: boolean;
 }
 
-const LABELS: Record<Payer, string> = {
-  justine: "Justine",
-  nathan: "Nathan",
-  both: "Justine + Nathan",
-};
-
 /**
  * Avatar d'identité — jamais de sens fonctionnel porté par la couleur seule :
  * initiale(s) toujours visibles. Une personne = pastille simple ; les deux =
  * pastille bicolore unique (plus lisible à petite taille que deux avatars
- * empilés), conformément à la charte graphique.
+ * empilés), conformément à la charte graphique. Les noms affichés viennent
+ * des Paramètres (renommables) ; les couleurs prune/bleu ardoise restent
+ * fixes, indépendantes du nom.
  */
 export function PersonBadge({
   payer,
@@ -27,6 +24,13 @@ export function PersonBadge({
   size = 22,
   showLabel = false,
 }: PersonBadgeProps) {
+  const { settings } = useSettings();
+  const labels: Record<Payer, string> = {
+    justine: settings.profileNames.justine,
+    nathan: settings.profileNames.nathan,
+    both: `${settings.profileNames.justine} + ${settings.profileNames.nathan}`,
+  };
+
   return (
     <span className="person-badge">
       {payer === "both" ? (
@@ -49,13 +53,13 @@ export function PersonBadge({
           }}
           aria-hidden="true"
         >
-          {LABELS[payer].charAt(0)}
+          {labels[payer].charAt(0).toUpperCase()}
         </span>
       )}
       {showLabel && (
-        <span className="person-badge__label">{LABELS[payer]}</span>
+        <span className="person-badge__label">{labels[payer]}</span>
       )}
-      {!showLabel && <span className="sr-only">{LABELS[payer]}</span>}
+      {!showLabel && <span className="sr-only">{labels[payer]}</span>}
     </span>
   );
 }

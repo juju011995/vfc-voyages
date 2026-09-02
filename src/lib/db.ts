@@ -5,6 +5,7 @@
 
 import { createStore, get, set, del, keys } from "idb-keyval";
 import type {
+  AppSettings,
   BorderRequirement,
   BudgetPlan,
   BudgetSettings,
@@ -845,4 +846,43 @@ export async function deleteMaterielItem(id: string): Promise<void> {
     const { linkedMaterielItemId, ...rest } = linkedTask;
     await set(taskKey(linkedTask.id), { ...rest, updatedAt: Date.now() }, store);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Module Paramètres
+
+const APP_SETTINGS_KEY = "app-settings";
+
+const DEFAULT_APP_SETTINGS: AppSettings = {
+  defaultCurrency: "EUR",
+  profileNames: { justine: "Justine", nathan: "Nathan" },
+};
+
+/** Fusionne avec les valeurs par défaut pour rester tolérant à un futur champ ajouté à AppSettings. */
+export async function getAppSettings(): Promise<AppSettings> {
+  const settings = await get<AppSettings>(APP_SETTINGS_KEY, store);
+  if (!settings) return DEFAULT_APP_SETTINGS;
+  return {
+    ...DEFAULT_APP_SETTINGS,
+    ...settings,
+    profileNames: { ...DEFAULT_APP_SETTINGS.profileNames, ...settings.profileNames },
+  };
+}
+
+export async function saveAppSettings(settings: AppSettings): Promise<void> {
+  await set(APP_SETTINGS_KEY, settings, store);
+}
+
+/**
+ * Exporte l'intégralité des données de l'app (toutes les clés du store
+ * IndexedDB unique, cf. commentaire en tête de fichier) — pour la
+ * sauvegarde manuelle proposée dans Paramètres. Pas de désérialisation
+ * particulière : chaque module sait déjà lire ses propres clés préfixées.
+ */
+export async function exportAllData(): Promise<Record<string, unknown>> {
+  const allKeys = await keys(store);
+  const entries = await Promise.all(
+    allKeys.map(async (k) => [String(k), await get(k, store)] as const),
+  );
+  return Object.fromEntries(entries);
 }
