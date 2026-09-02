@@ -87,6 +87,19 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            // Taux de change (module Budget) : idem — src/lib/currency.ts gère
+            // déjà son propre cache IndexedDB avec repli hors-ligne, ce cache
+            // HTTP est une seconde ligne de défense.
+            urlPattern: ({ url }) => url.hostname === "api.frankfurter.dev",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "exchange-rates",
+              networkTimeoutSeconds: 6,
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
       },
       devOptions: {

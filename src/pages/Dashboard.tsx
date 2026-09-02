@@ -1,21 +1,38 @@
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Polyline, CircleMarker } from "react-leaflet";
-import { listStops, getCachedSegment } from "../lib/db";
-import type { RouteSegment, Stop } from "../lib/types";
+import { listStops, getCachedSegment, listExpenses, getBudgetSettings } from "../lib/db";
+import type { BudgetSettings, Expense, RouteSegment, Stop } from "../lib/types";
 import { statusColor } from "../components/map/mapColors";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
+import { BudgetSummaryCard } from "../components/budget/BudgetSummaryCard";
 import "./Dashboard.css";
 
 interface DashboardProps {
   onOpenCarte: () => void;
+  onOpenBudget: () => void;
 }
 
-export function Dashboard({ onOpenCarte }: DashboardProps) {
+function currentMonthKey(): string {
+  return new Date().toISOString().slice(0, 7);
+}
+
+function monthLabel(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
   const { resolvedTheme } = useTheme();
   const palette = getPalette(resolvedTheme);
   const [stops, setStops] = useState<Stop[]>([]);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,6 +49,13 @@ export function Dashboard({ onOpenCarte }: DashboardProps) {
         setSegments(cached.filter((s): s is RouteSegment => Boolean(s)));
       }
     })();
+    (async () => {
+      const [exps, settings] = await Promise.all([listExpenses(), getBudgetSettings()]);
+      if (!cancelled) {
+        setExpenses(exps);
+        setBudgetSettings(settings);
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -39,6 +63,12 @@ export function Dashboard({ onOpenCarte }: DashboardProps) {
 
   const visited = stops.filter((s) => s.status === "visite").length;
   const totalKm = segments.reduce((sum, s) => sum + s.distanceMeters, 0) / 1000;
+
+  const totalSpentEUR = expenses.reduce((sum, e) => sum + e.amountEUR, 0);
+  const thisMonth = currentMonthKey();
+  const thisMonthSpentEUR = expenses
+    .filter((e) => e.date.startsWith(thisMonth))
+    .reduce((sum, e) => sum + e.amountEUR, 0);
 
   return (
     <div className="dashboard">
@@ -110,8 +140,25 @@ export function Dashboard({ onOpenCarte }: DashboardProps) {
         </div>
       </div>
 
+      <button
+        type="button"
+        className="dashboard__budget-card"
+        onClick={onOpenBudget}
+        aria-label="Ouvrir le module Budget"
+      >
+        {budgetSettings && (
+          <BudgetSummaryCard
+            totalSpentEUR={totalSpentEUR}
+            tripTotalBudgetEUR={budgetSettings.tripTotalBudgetEUR}
+            monthLabel={monthLabel(thisMonth)}
+            monthSpentEUR={thisMonthSpentEUR}
+            monthPrevuEUR={0}
+            compact
+          />
+        )}
+      </button>
+
       <div className="dashboard__grid">
-        <PlaceholderCard title="Budget" text="Module à venir" />
         <PlaceholderCard title="Tâches" text="Module à venir" />
         <PlaceholderCard title="Loki" text="Module à venir" />
         <PlaceholderCard title="Statistiques" text="Module à venir" />

@@ -1,0 +1,100 @@
+.expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+}
+
+.expense-form__row {
+  display: flex;
+  gap: 10px;
+}
+
+.expense-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.expense-form__field--amount {
+  flex: 1 1 auto;
+}
+
+.expense-form__field--currency {
+  flex: 0 0 90px;
+}
+
+.expense-form__field input,
+.expense-form__field select {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.expense-form__field input:focus,
+.expense-form__field select:focus {
+  outline: 2px solid var(--color-action);
+  outline-offset: 1px;
+}
+
+.expense-form__payer-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.expense-form__payer-toggle button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  padding: 8px 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.expense-form__payer-toggle button.is-active {
+  border-color: var(--color-action);
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.expense-form__notice {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-alert);
+}
+
+.expense-form__error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-alert);
+}
+
+.expense-form__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.expense-form__actions .btn {
+  flex: 0 0 auto;
+}
