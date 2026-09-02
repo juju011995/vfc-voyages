@@ -29,6 +29,10 @@
   /* -- Terracotta décoratif (jamais texte/bouton, contraste trop faible sur sable) -- */
   --color-terracotta-decorative: #c67139;
 
+  /* -- Statistiques : dédiées aux graphiques (jamais réutilisées comme couleur d'action ou de statut) -- */
+  --color-chart-real: #0f8a78;    /* dépenses réelles / km parcourus */
+  --color-chart-planned: #a8720f; /* prévisionnel */
+
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 22px;
@@ -62,6 +66,9 @@
   --color-border: #5b5546;
 
   --color-terracotta-decorative: #e08a4f;
+
+  --color-chart-real: #22a08c;
+  --color-chart-planned: #b8872f;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 20px rgba(0, 0, 0, 0.28);
 

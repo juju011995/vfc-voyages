@@ -2,13 +2,14 @@ import type { ReactNode } from "react";
 import { useTheme } from "../../theme/ThemeProvider";
 import "./AppShell.css";
 
-export type TabId = "accueil" | "carte" | "budget" | "taches" | "plus";
+export type TabId = "accueil" | "carte" | "budget" | "taches" | "stats" | "plus";
 
 const TABS: Array<{ id: TabId; label: string; icon: ReactNode }> = [
   { id: "accueil", label: "Accueil", icon: <IconHome /> },
   { id: "carte", label: "Carte", icon: <IconMap /> },
   { id: "budget", label: "Budget", icon: <IconWallet /> },
   { id: "taches", label: "Tâches", icon: <IconCheck /> },
+  { id: "stats", label: "Stats", icon: <IconChart /> },
   { id: "plus", label: "Plus", icon: <IconDots /> },
 ];
 
@@ -137,6 +138,26 @@ function IconCheck() {
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconChart() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+      <path
+        d="M4 20V4M4 20h16"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8 16v-4M13 16V8M18 16v-7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
       />
     </svg>
   );

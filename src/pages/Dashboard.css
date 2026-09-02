@@ -78,28 +78,3 @@
   font-weight: 700;
 }
 
-.dashboard__grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.dashboard__placeholder-card {
-  background: var(--color-surface);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  opacity: 0.75;
-}
-
-.dashboard__placeholder-card h3 {
-  margin: 0 0 4px;
-  font-family: var(--font-heading);
-  font-size: 15px;
-}
-
-.dashboard__placeholder-card p {
-  margin: 0;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}

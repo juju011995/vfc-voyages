@@ -1,0 +1,83 @@
+.km-country-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.km-country-chart__empty {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.km-country-chart__svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.km-country-chart__label {
+  fill: var(--color-text);
+  font-size: 10px;
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.km-country-chart__value {
+  fill: var(--color-text-secondary);
+  font-size: 10px;
+  font-family: var(--font-body);
+}
+
+.km-country-chart__bar {
+  fill: var(--color-chart-real);
+  transition: opacity 0.1s ease;
+}
+
+.km-country-chart__bar.is-hovered {
+  opacity: 0.75;
+}
+
+.km-country-chart__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.km-country-chart__hit:focus {
+  outline: none;
+}
+
+.km-country-chart__table-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--color-action);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.km-country-chart__table-wrap {
+  overflow-x: auto;
+}
+
+.km-country-chart__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.km-country-chart__table th,
+.km-country-chart__table td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.km-country-chart__table th {
+  color: var(--color-text-secondary);
+  font-weight: 700;
+}

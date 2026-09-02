@@ -28,6 +28,7 @@ import { countTasks } from "../lib/taskCalc";
 import { buildAgenda, getUpcomingAgenda } from "../lib/calendarCalc";
 import { getUpcomingLokiDeadlines } from "../lib/lokiCalc";
 import { countMaterielItems, spentPriceEUR, totalPriceEUR } from "../lib/materielCalc";
+import { buildCumulativeBudgetTrend, buildKmByCountry, buildMonthlyBudgetTrend } from "../lib/statsCalc";
 import { statusColor } from "../components/map/mapColors";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
@@ -36,12 +37,14 @@ import { MaterielSummaryCard } from "../components/budget/MaterielSummaryCard";
 import { TaskSummaryCard } from "../components/tasks/TaskSummaryCard";
 import { UpcomingEventCard } from "../components/calendar/UpcomingEventCard";
 import { LokiSummaryCard } from "../components/loki/LokiSummaryCard";
+import { StatsSummaryCard } from "../components/stats/StatsSummaryCard";
 import "./Dashboard.css";
 
 interface DashboardProps {
   onOpenCarte: () => void;
   onOpenBudget: () => void;
   onOpenTaches: () => void;
+  onOpenStats: () => void;
   onOpenPlus: () => void;
 }
 
@@ -58,7 +61,13 @@ function monthLabel(month: string): string {
   });
 }
 
-export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus }: DashboardProps) {
+export function Dashboard({
+  onOpenCarte,
+  onOpenBudget,
+  onOpenTaches,
+  onOpenStats,
+  onOpenPlus,
+}: DashboardProps) {
   const { resolvedTheme } = useTheme();
   const palette = getPalette(resolvedTheme);
   const [stops, setStops] = useState<Stop[]>([]);
@@ -138,6 +147,16 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
   const thisMonthPrevuEUR = budgetPlans
     .filter((p) => p.month === thisMonth)
     .reduce((sum, p) => sum + p.amountEUR, 0);
+
+  const kmByCountry = buildKmByCountry(stops, segments);
+  const visitedKm = kmByCountry.reduce((sum, c) => sum + c.km, 0);
+  const monthlyTrend = buildMonthlyBudgetTrend(expenses, budgetPlans);
+  const cumulativeTrend = buildCumulativeBudgetTrend(monthlyTrend);
+  const lastCumulative = cumulativeTrend[cumulativeTrend.length - 1];
+  const cumulativeDeltaEUR =
+    budgetPlans.length > 0 && lastCumulative
+      ? lastCumulative.cumulativeSpentEUR - lastCumulative.cumulativePrevuEUR
+      : undefined;
 
   return (
     <div className="dashboard">
@@ -268,18 +287,18 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
         />
       </button>
 
-      <div className="dashboard__grid">
-        <PlaceholderCard title="Statistiques" text="Module à venir" />
-      </div>
-    </div>
-  );
-}
-
-function PlaceholderCard({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="dashboard__placeholder-card">
-      <h3>{title}</h3>
-      <p>{text}</p>
+      <button
+        type="button"
+        className="dashboard__task-card"
+        onClick={onOpenStats}
+        aria-label="Ouvrir les statistiques"
+      >
+        <StatsSummaryCard
+          totalKm={visitedKm}
+          countryCount={kmByCountry.length}
+          cumulativeDeltaEUR={cumulativeDeltaEUR}
+        />
+      </button>
     </div>
   );
 }

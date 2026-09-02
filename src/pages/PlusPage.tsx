@@ -69,19 +69,6 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         <span>Paramètres</span>
         <span className="plus-page__menu-item-arrow">→</span>
       </button>
-
-      <div className="plus-page__grid">
-        <PlaceholderCard title="Statistiques" text="Module à venir" />
-      </div>
-    </div>
-  );
-}
-
-function PlaceholderCard({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="plus-page__placeholder-card">
-      <h3>{title}</h3>
-      <p>{text}</p>
     </div>
   );
 }

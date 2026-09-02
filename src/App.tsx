@@ -4,6 +4,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { CartePage } from "./pages/CartePage";
 import { BudgetPage } from "./pages/BudgetPage";
 import { TachesPage } from "./pages/TachesPage";
+import { StatsPage } from "./pages/StatsPage";
 import { PlusPage } from "./pages/PlusPage";
 
 const TAB_TITLES: Record<TabId, string> = {
@@ -11,6 +12,7 @@ const TAB_TITLES: Record<TabId, string> = {
   carte: "Carte",
   budget: "Budget",
   taches: "Tâches",
+  stats: "Statistiques",
   plus: "Plus",
 };
 
@@ -28,12 +30,14 @@ function App() {
           onOpenCarte={() => setActiveTab("carte")}
           onOpenBudget={() => setActiveTab("budget")}
           onOpenTaches={() => setActiveTab("taches")}
+          onOpenStats={() => setActiveTab("stats")}
           onOpenPlus={() => setActiveTab("plus")}
         />
       )}
       {activeTab === "carte" && <CartePage />}
       {activeTab === "budget" && <BudgetPage />}
       {activeTab === "taches" && <TachesPage />}
+      {activeTab === "stats" && <StatsPage />}
       {activeTab === "plus" && (
         <PlusPage onOpenTaches={() => setActiveTab("taches")} />
       )}
