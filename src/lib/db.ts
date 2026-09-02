@@ -7,6 +7,7 @@ import { createStore, get, set, del, keys } from "idb-keyval";
 import type {
   BudgetPlan,
   BudgetSettings,
+  CalendarEvent,
   Category,
   ExchangeRates,
   Expense,
@@ -37,6 +38,7 @@ const EXCHANGE_RATES_KEY = "exchange-rates";
 
 const TASK_TAG_PREFIX = "task-tag:";
 const TASK_PREFIX = "task:";
+const CALENDAR_EVENT_PREFIX = "calendar-event:";
 
 function stopKey(id: string) {
   return `${STOPS_PREFIX}${id}`;
@@ -404,4 +406,32 @@ export async function saveTask(task: Task): Promise<void> {
 
 export async function deleteTask(id: string): Promise<void> {
   await del(taskKey(id), store);
+}
+
+// ---------------------------------------------------------------------------
+// Module Calendrier
+
+function calendarEventKey(id: string) {
+  return `${CALENDAR_EVENT_PREFIX}${id}`;
+}
+
+export async function listCalendarEvents(): Promise<CalendarEvent[]> {
+  const allKeys = await keys(store);
+  const eventKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(CALENDAR_EVENT_PREFIX),
+  );
+  const events = await Promise.all(
+    eventKeys.map((k) => get<CalendarEvent>(k, store)),
+  );
+  return events
+    .filter((e): e is CalendarEvent => Boolean(e))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function saveCalendarEvent(event: CalendarEvent): Promise<void> {
+  await set(calendarEventKey(event.id), event, store);
+}
+
+export async function deleteCalendarEvent(id: string): Promise<void> {
+  await del(calendarEventKey(id), store);
 }

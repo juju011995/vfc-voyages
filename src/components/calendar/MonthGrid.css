@@ -1,0 +1,98 @@
+.month-grid {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 14px;
+}
+
+.month-grid__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.month-grid__header h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  text-transform: capitalize;
+}
+
+.month-grid__header button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.month-grid__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.month-grid__weekdays span {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.month-grid__cells {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.month-grid__cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+.month-grid__cell--outside {
+  color: var(--color-text-secondary);
+  opacity: 0.4;
+}
+
+.month-grid__cell--today {
+  outline: 1.5px solid var(--color-action);
+  outline-offset: -1.5px;
+}
+
+.month-grid__cell--selected {
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+}
+
+.month-grid__day-number {
+  font-size: 12.5px;
+}
+
+.month-grid__dots {
+  display: flex;
+  gap: 2px;
+}
+
+.month-grid__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+}

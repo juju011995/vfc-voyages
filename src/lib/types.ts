@@ -156,3 +156,34 @@ export interface Task {
   createdAt: number;
   updatedAt: number;
 }
+
+// ---------------------------------------------------------------------------
+// Module Calendrier
+//
+// Les échéances de tâches ne sont PAS dupliquées ici : le calendrier les lit
+// à la volée depuis le module Tâches (voir buildAgenda() dans
+// src/lib/calendarCalc.ts). Seuls les événements indépendants (rendez-vous,
+// réservations, visites) sont persistés comme CalendarEvent.
+//
+// Synchronisation Google Agenda : hors périmètre (nécessite OAuth + réseau,
+// contradictoire avec le mode hors-ligne obligatoire), mais `source` et
+// `externalId` sont réservés dès maintenant pour qu'un futur import/export
+// puisse distinguer un événement créé localement d'un événement importé,
+// sans avoir à changer la forme des données existantes.
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  /** Date de début, format ISO (YYYY-MM-DD). */
+  date: string;
+  /** Date de fin optionnelle, pour un événement sur plusieurs jours (ex. réservation d'hôtel). */
+  endDate?: string;
+  /** Heure optionnelle, format HH:MM. */
+  time?: string;
+  /** Réservé pour une future synchronisation Google Agenda — toujours "local" pour l'instant. */
+  source?: "local" | "google";
+  externalId?: string;
+  createdAt: number;
+  updatedAt: number;
+}

@@ -7,20 +7,32 @@ import {
   listBudgetPlans,
   getBudgetSettings,
   listTasks,
+  listCalendarEvents,
 } from "../lib/db";
-import type { BudgetPlan, BudgetSettings, Expense, RouteSegment, Stop, Task } from "../lib/types";
+import type {
+  BudgetPlan,
+  BudgetSettings,
+  CalendarEvent,
+  Expense,
+  RouteSegment,
+  Stop,
+  Task,
+} from "../lib/types";
 import { countTasks } from "../lib/taskCalc";
+import { buildAgenda, getUpcomingAgenda } from "../lib/calendarCalc";
 import { statusColor } from "../components/map/mapColors";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
 import { BudgetSummaryCard } from "../components/budget/BudgetSummaryCard";
 import { TaskSummaryCard } from "../components/tasks/TaskSummaryCard";
+import { UpcomingEventCard } from "../components/calendar/UpcomingEventCard";
 import "./Dashboard.css";
 
 interface DashboardProps {
   onOpenCarte: () => void;
   onOpenBudget: () => void;
   onOpenTaches: () => void;
+  onOpenPlus: () => void;
 }
 
 function currentMonthKey(): string {
@@ -36,7 +48,7 @@ function monthLabel(month: string): string {
   });
 }
 
-export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches }: DashboardProps) {
+export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus }: DashboardProps) {
   const { resolvedTheme } = useTheme();
   const palette = getPalette(resolvedTheme);
   const [stops, setStops] = useState<Stop[]>([]);
@@ -45,6 +57,7 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches }: Dashboard
   const [budgetPlans, setBudgetPlans] = useState<BudgetPlan[]>([]);
   const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,12 +90,17 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches }: Dashboard
       const loadedTasks = await listTasks();
       if (!cancelled) setTasks(loadedTasks);
     })();
+    (async () => {
+      const loadedEvents = await listCalendarEvents();
+      if (!cancelled) setCalendarEvents(loadedEvents);
+    })();
     return () => {
       cancelled = true;
     };
   }, []);
 
   const taskCounts = countTasks(tasks);
+  const nextAgendaItem = getUpcomingAgenda(buildAgenda(calendarEvents, tasks), 1)[0];
 
   const visited = stops.filter((s) => s.status === "visite").length;
   const totalKm = segments.reduce((sum, s) => sum + s.distanceMeters, 0) / 1000;
@@ -191,6 +209,15 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches }: Dashboard
         aria-label="Ouvrir le module Tâches"
       >
         <TaskSummaryCard counts={taskCounts} />
+      </button>
+
+      <button
+        type="button"
+        className="dashboard__task-card"
+        onClick={onOpenPlus}
+        aria-label="Ouvrir le calendrier"
+      >
+        <UpcomingEventCard item={nextAgendaItem} />
       </button>
 
       <div className="dashboard__grid">

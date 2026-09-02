@@ -4,7 +4,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { CartePage } from "./pages/CartePage";
 import { BudgetPage } from "./pages/BudgetPage";
 import { TachesPage } from "./pages/TachesPage";
-import { ComingSoon } from "./pages/ComingSoon";
+import { PlusPage } from "./pages/PlusPage";
 
 const TAB_TITLES: Record<TabId, string> = {
   accueil: "Bonjour !",
@@ -28,12 +28,15 @@ function App() {
           onOpenCarte={() => setActiveTab("carte")}
           onOpenBudget={() => setActiveTab("budget")}
           onOpenTaches={() => setActiveTab("taches")}
+          onOpenPlus={() => setActiveTab("plus")}
         />
       )}
       {activeTab === "carte" && <CartePage />}
       {activeTab === "budget" && <BudgetPage />}
       {activeTab === "taches" && <TachesPage />}
-      {activeTab === "plus" && <ComingSoon moduleName="Loki, Statistiques & Paramètres" />}
+      {activeTab === "plus" && (
+        <PlusPage onOpenTaches={() => setActiveTab("taches")} />
+      )}
     </AppShell>
   );
 }
