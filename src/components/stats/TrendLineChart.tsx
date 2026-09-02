@@ -77,6 +77,7 @@ export function TrendLineChart({
       <svg
         className="trend-line-chart__svg"
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        preserveAspectRatio="none"
         role="img"
         aria-labelledby={titleId}
       >
@@ -107,7 +108,7 @@ export function TrendLineChart({
               x={xAt(i)}
               y={HEIGHT - 8}
               className="trend-line-chart__axis-label"
-              textAnchor="middle"
+              textAnchor={i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"}
             >
               {p.label}
             </text>

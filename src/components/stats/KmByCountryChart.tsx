@@ -7,8 +7,8 @@ interface KmByCountryChartProps {
 }
 
 const WIDTH = 320;
-const ROW_HEIGHT = 36;
-const BAR_HEIGHT = 14;
+const ROW_HEIGHT = 32;
+const BAR_HEIGHT = 13;
 const PAD_X = 4;
 const PAD_TOP = 6;
 const VALUE_COLUMN = 46;
@@ -32,56 +32,60 @@ export function KmByCountryChart({ data }: KmByCountryChartProps) {
 
   return (
     <div className="km-country-chart">
-      <svg
-        className="km-country-chart__svg"
-        viewBox={`0 0 ${WIDTH} ${height}`}
-        role="img"
-        aria-labelledby={titleId}
-      >
-        <title id={titleId}>Kilomètres parcourus par pays</title>
-        {data.map((d, i) => {
-          const y = PAD_TOP + i * ROW_HEIGHT;
-          const barWidth = maxKm > 0 ? Math.max((d.km / maxKm) * barMaxWidth, 3) : 3;
-          return (
-            <g key={d.country}>
-              <text x={PAD_X} y={y + 9} className="km-country-chart__label">
-                {d.country}
-              </text>
-              <rect
-                x={PAD_X}
-                y={y + 14}
-                width={barWidth}
-                height={BAR_HEIGHT}
-                rx={4}
-                className={
-                  "km-country-chart__bar" + (hoveredIndex === i ? " is-hovered" : "")
-                }
-              />
-              <text
-                x={PAD_X + barWidth + 6}
-                y={y + 14 + BAR_HEIGHT / 2 + 3}
-                className="km-country-chart__value"
-              >
-                {Math.round(d.km)} km
-              </text>
-              <rect
-                x={0}
-                y={y}
-                width={WIDTH}
-                height={ROW_HEIGHT}
-                className="km-country-chart__hit"
-                tabIndex={0}
-                role="img"
-                aria-label={`${d.country} : ${Math.round(d.km)} kilomètres`}
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                onFocus={() => setHoveredIndex(i)}
-                onBlur={() => setHoveredIndex(null)}
-              />
-            </g>
-          );
-        })}
-      </svg>
+      <div className="km-country-chart__svg-wrap">
+        <svg
+          className="km-country-chart__svg"
+          viewBox={`0 0 ${WIDTH} ${height}`}
+          preserveAspectRatio="none"
+          style={{ height }}
+          role="img"
+          aria-labelledby={titleId}
+        >
+          <title id={titleId}>Kilomètres parcourus par pays</title>
+          {data.map((d, i) => {
+            const y = PAD_TOP + i * ROW_HEIGHT;
+            const barWidth = maxKm > 0 ? Math.max((d.km / maxKm) * barMaxWidth, 3) : 3;
+            return (
+              <g key={d.country}>
+                <text x={PAD_X} y={y + 9} className="km-country-chart__label">
+                  {d.country}
+                </text>
+                <rect
+                  x={PAD_X}
+                  y={y + 14}
+                  width={barWidth}
+                  height={BAR_HEIGHT}
+                  rx={4}
+                  className={
+                    "km-country-chart__bar" + (hoveredIndex === i ? " is-hovered" : "")
+                  }
+                />
+                <text
+                  x={PAD_X + barWidth + 6}
+                  y={y + 14 + BAR_HEIGHT / 2 + 3}
+                  className="km-country-chart__value"
+                >
+                  {Math.round(d.km)} km
+                </text>
+                <rect
+                  x={0}
+                  y={y}
+                  width={WIDTH}
+                  height={ROW_HEIGHT}
+                  className="km-country-chart__hit"
+                  tabIndex={0}
+                  role="img"
+                  aria-label={`${d.country} : ${Math.round(d.km)} kilomètres`}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onFocus={() => setHoveredIndex(i)}
+                  onBlur={() => setHoveredIndex(null)}
+                />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
       <button
         type="button"

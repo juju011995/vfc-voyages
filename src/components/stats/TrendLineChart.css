@@ -12,9 +12,10 @@
 }
 
 .trend-line-chart__svg {
+  display: block;
   width: 100%;
-  height: auto;
-  overflow: visible;
+  height: 170px;
+  overflow: hidden;
 }
 
 .trend-line-chart__grid {

@@ -11,10 +11,15 @@
   font-style: italic;
 }
 
+.km-country-chart__svg-wrap {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
 .km-country-chart__svg {
+  display: block;
   width: 100%;
-  height: auto;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .km-country-chart__label {
