@@ -11,6 +11,10 @@ interface MonthGridProps {
 
 const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
+// Au-delà, on affiche "+N" plutôt que d'empiler indéfiniment (une case ne
+// doit pas devenir illisible si une journée cumule beaucoup d'éléments).
+const MAX_ITEMS_PER_CELL = 4;
+
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -108,10 +112,17 @@ export function MonthGrid({
             >
               <span className="month-grid__day-number">{dayNumber}</span>
               {items.length > 0 && (
-                <span className="month-grid__dots">
-                  {items.slice(0, 3).map((item) => (
-                    <span key={item.id} className="month-grid__dot" />
+                <span className="month-grid__items">
+                  {items.slice(0, MAX_ITEMS_PER_CELL).map((item) => (
+                    <span key={item.id} className="month-grid__item-label">
+                      {item.title || "(sans titre)"}
+                    </span>
                   ))}
+                  {items.length > MAX_ITEMS_PER_CELL && (
+                    <span className="month-grid__item-more">
+                      +{items.length - MAX_ITEMS_PER_CELL}
+                    </span>
+                  )}
                 </span>
               )}
             </button>
