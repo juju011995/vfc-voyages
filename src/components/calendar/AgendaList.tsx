@@ -1,6 +1,7 @@
 import type { AgendaItem } from "../../lib/calendarCalc";
 import type { Palette } from "../../theme/palette";
 import type { TaskTag } from "../../lib/types";
+import { TAG_TEXT_ON_COLOR } from "../../lib/tagColors";
 import { PersonBadge } from "../shared/PersonBadge";
 import "./AgendaList.css";
 
@@ -55,7 +56,16 @@ export function AgendaList({
               <span className="agenda-list__info">
                 <span className="agenda-list__title-row">
                   {item.kind === "task" && (
-                    <span className="agenda-list__badge">Tâche{tag ? ` · ${tag.name}` : ""}</span>
+                    <span
+                      className="agenda-list__badge"
+                      style={
+                        tag?.color
+                          ? { background: tag.color, color: TAG_TEXT_ON_COLOR }
+                          : undefined
+                      }
+                    >
+                      Tâche{tag ? ` · ${tag.name}` : ""}
+                    </span>
                   )}
                   <span className={"agenda-list__title" + (done ? " agenda-list__title--done" : "")}>
                     {item.title || "(sans titre)"}

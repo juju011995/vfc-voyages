@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TAG_COLOR_PALETTE } from "../../lib/tagColors";
 import "./TagManager.css";
 
 export interface TaggableItem {
@@ -6,6 +7,7 @@ export interface TaggableItem {
   name: string;
   isDefault: boolean;
   archived?: boolean;
+  color?: string;
 }
 
 interface TagManagerProps<T extends TaggableItem> {
@@ -16,6 +18,9 @@ interface TagManagerProps<T extends TaggableItem> {
   onArchive: (id: string) => void;
   /** Clic principal sur la pastille : filtre la liste liée (dépenses, tâches…) sur cet item. */
   onFilter: (id: string) => void;
+  /** Affiche un sélecteur de couleur par item (module Tâches uniquement pour l'instant). */
+  showColorPicker?: boolean;
+  onColorChange?: (id: string, color: string) => void;
 }
 
 /**
@@ -30,12 +35,16 @@ export function TagManager<T extends TaggableItem>({
   onRename,
   onArchive,
   onFilter,
+  showColorPicker = false,
+  onColorChange,
 }: TagManagerProps<T>) {
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [colorPickerId, setColorPickerId] = useState<string | null>(null);
 
   const visible = items.filter((item) => !item.archived);
+  const colorPickerItem = visible.find((item) => item.id === colorPickerId);
 
   function handleAdd() {
     const trimmed = newName.trim();
@@ -61,6 +70,17 @@ export function TagManager<T extends TaggableItem>({
       <ul className="tag-manager__list">
         {visible.map((item) => (
           <li key={item.id} className="tag-manager__item">
+            {showColorPicker && (
+              <button
+                type="button"
+                className="tag-manager__color-dot"
+                style={{ background: item.color ?? "transparent" }}
+                aria-label={`Couleur de ${item.name}`}
+                onClick={() =>
+                  setColorPickerId((current) => (current === item.id ? null : item.id))
+                }
+              />
+            )}
             {editingId === item.id ? (
               <input
                 type="text"
@@ -101,6 +121,35 @@ export function TagManager<T extends TaggableItem>({
           </li>
         ))}
       </ul>
+
+      {showColorPicker && colorPickerItem && onColorChange && (
+        <div className="tag-manager__color-picker">
+          <p>Couleur de « {colorPickerItem.name} »</p>
+          <div className="tag-manager__swatches">
+            {TAG_COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                type="button"
+                className={
+                  "tag-manager__swatch" +
+                  (colorPickerItem.color === color ? " is-selected" : "")
+                }
+                style={{ background: color }}
+                aria-label={color}
+                onClick={() => onColorChange(colorPickerItem.id, color)}
+              />
+            ))}
+          </div>
+          <label className="tag-manager__custom-color">
+            <span>Autre couleur…</span>
+            <input
+              type="color"
+              value={colorPickerItem.color ?? "#ffffff"}
+              onChange={(e) => onColorChange(colorPickerItem.id, e.target.value)}
+            />
+          </label>
+        </div>
+      )}
 
       <div className="tag-manager__add">
         <input

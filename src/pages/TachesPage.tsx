@@ -14,6 +14,7 @@ import {
   saveTaskTag,
 } from "../lib/db";
 import { sortTasksForColumn } from "../lib/taskCalc";
+import { pickNextTagColor } from "../lib/tagColors";
 import type { Task, TaskStatus, TaskTag } from "../lib/types";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
@@ -150,10 +151,19 @@ export function TachesPage() {
       id: crypto.randomUUID(),
       name,
       isDefault: false,
+      color: pickNextTagColor(tags.map((t) => t.color)),
       createdAt: Date.now(),
     };
     await saveTaskTag(tag);
     setTags((prev) => [...prev, tag]);
+  }
+
+  async function handleChangeTagColor(id: string, color: string) {
+    const tag = tags.find((t) => t.id === id);
+    if (!tag) return;
+    const updated = { ...tag, color };
+    await saveTaskTag(updated);
+    setTags((prev) => prev.map((t) => (t.id === id ? updated : t)));
   }
 
   async function handleRenameTag(id: string, name: string) {
@@ -206,6 +216,8 @@ export function TachesPage() {
             setTagFilter(id);
             setShowTagManager(false);
           }}
+          showColorPicker
+          onColorChange={handleChangeTagColor}
         />
       )}
 

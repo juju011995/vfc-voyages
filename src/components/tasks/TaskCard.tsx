@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Task, TaskStatus, TaskTag } from "../../lib/types";
 import type { Palette } from "../../theme/palette";
 import { isOverdue } from "../../lib/taskCalc";
+import { TAG_TEXT_ON_COLOR } from "../../lib/tagColors";
 import { PersonBadge } from "../shared/PersonBadge";
 import "./TaskCard.css";
 
@@ -58,7 +59,18 @@ export function TaskCard({ task, tag, palette, onOpen, onStatusChange }: TaskCar
         >
           ⠿
         </button>
-        {tag && <span className="task-card__tag">{tag.name}</span>}
+        {tag && (
+          <span
+            className="task-card__tag"
+            style={
+              tag.color
+                ? { background: tag.color, color: TAG_TEXT_ON_COLOR }
+                : undefined
+            }
+          >
+            {tag.name}
+          </span>
+        )}
         <span className={`task-card__priority task-card__priority--${task.priority}`}>
           {PRIORITY_LABELS[task.priority]}
         </span>

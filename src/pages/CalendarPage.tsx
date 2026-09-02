@@ -113,6 +113,7 @@ export function CalendarPage({ onOpenTaches }: CalendarPageProps) {
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
         itemsByDate={agendaByDate}
+        tags={tags}
       />
 
       <div className="calendar-page__day-header">

@@ -18,6 +18,7 @@ import type {
   Task,
   TaskTag,
 } from "./types";
+import { pickNextTagColor } from "./tagColors";
 
 // Un seul object store IndexedDB pour toute l'app : les clés préfixées par
 // module évitent d'avoir à gérer des montées de version IndexedDB à chaque
@@ -323,14 +324,34 @@ async function readTaskTagsRaw(): Promise<TaskTag[]> {
 
 async function seedDefaultTaskTags(): Promise<TaskTag[]> {
   const now = Date.now();
-  const defaults: TaskTag[] = DEFAULT_TASK_TAG_NAMES.map((name) => ({
-    id: crypto.randomUUID(),
-    name,
-    isDefault: true,
-    createdAt: now,
-  }));
+  const usedColors: Array<string | undefined> = [];
+  const defaults: TaskTag[] = DEFAULT_TASK_TAG_NAMES.map((name) => {
+    const color = pickNextTagColor(usedColors);
+    usedColors.push(color);
+    return { id: crypto.randomUUID(), name, isDefault: true, color, createdAt: now };
+  });
   await Promise.all(defaults.map((t) => set(taskTagKey(t.id), t, store)));
   return defaults;
+}
+
+/** Attribue une couleur pastel aux tags qui n'en ont pas encore (données antérieures à cette fonctionnalité). */
+async function backfillTagColors(tags: TaskTag[]): Promise<TaskTag[]> {
+  if (tags.every((t) => t.color)) return tags;
+
+  const usedColors = tags.map((t) => t.color);
+  const updated: TaskTag[] = [];
+  for (const tag of tags) {
+    if (tag.color) {
+      updated.push(tag);
+      continue;
+    }
+    const color = pickNextTagColor(usedColors);
+    usedColors.push(color);
+    const withColor: TaskTag = { ...tag, color };
+    await set(taskTagKey(tag.id), withColor, store);
+    updated.push(withColor);
+  }
+  return updated;
 }
 
 /**
@@ -384,7 +405,8 @@ export async function listTaskTags(): Promise<TaskTag[]> {
     return taskTagsSeedPromise;
   }
 
-  return dedupeTaskTags(existing);
+  const deduped = await dedupeTaskTags(existing);
+  return backfillTagColors(deduped);
 }
 
 export async function saveTaskTag(tag: TaskTag): Promise<void> {

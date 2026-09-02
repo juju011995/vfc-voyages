@@ -1,4 +1,6 @@
 import type { AgendaItem } from "../../lib/calendarCalc";
+import type { TaskTag } from "../../lib/types";
+import { TAG_TEXT_ON_COLOR } from "../../lib/tagColors";
 import "./MonthGrid.css";
 
 interface MonthGridProps {
@@ -7,6 +9,7 @@ interface MonthGridProps {
   selectedDate: string;
   onSelectDate: (date: string) => void;
   itemsByDate: Map<string, AgendaItem[]>;
+  tags: TaskTag[];
 }
 
 const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -63,9 +66,15 @@ export function MonthGrid({
   selectedDate,
   onSelectDate,
   itemsByDate,
+  tags,
 }: MonthGridProps) {
   const cells = getGridDates(month);
   const today = todayIso();
+
+  function itemColor(item: AgendaItem): string | undefined {
+    if (item.kind !== "task" || !item.taskTagId) return undefined;
+    return tags.find((t) => t.id === item.taskTagId)?.color;
+  }
 
   return (
     <div className="month-grid">
@@ -113,11 +122,18 @@ export function MonthGrid({
               <span className="month-grid__day-number">{dayNumber}</span>
               {items.length > 0 && (
                 <span className="month-grid__items">
-                  {items.slice(0, MAX_ITEMS_PER_CELL).map((item) => (
-                    <span key={item.id} className="month-grid__item-label">
-                      {item.title || "(sans titre)"}
-                    </span>
-                  ))}
+                  {items.slice(0, MAX_ITEMS_PER_CELL).map((item) => {
+                    const color = itemColor(item);
+                    return (
+                      <span
+                        key={item.id}
+                        className="month-grid__item-label"
+                        style={color ? { background: color, color: TAG_TEXT_ON_COLOR } : undefined}
+                      >
+                        {item.title || "(sans titre)"}
+                      </span>
+                    );
+                  })}
                   {items.length > MAX_ITEMS_PER_CELL && (
                     <span className="month-grid__item-more">
                       +{items.length - MAX_ITEMS_PER_CELL}

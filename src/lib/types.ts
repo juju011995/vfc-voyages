@@ -138,6 +138,8 @@ export interface TaskTag {
   /** Tags fournis par défaut — non supprimables, seulement renommables. */
   isDefault: boolean;
   archived?: boolean;
+  /** Couleur pastel (hex) — identifie le tag partout où il s'affiche (cartes Tâches, Calendrier). */
+  color?: string;
   createdAt: number;
 }
 
