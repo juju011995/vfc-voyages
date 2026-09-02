@@ -189,3 +189,76 @@ export interface CalendarEvent {
   createdAt: number;
   updatedAt: number;
 }
+
+// ---------------------------------------------------------------------------
+// Module Loki
+//
+// Les tâches taguées "Loki" ne sont pas dupliquées ici non plus : ce module
+// les lit via getTasksByTagName(tasks, tags, "Loki") (src/lib/taskCalc.ts),
+// exactement comme prévu par le commentaire du module Tâches.
+
+export type LokiDocumentType = "vaccin" | "document";
+
+export interface LokiDocument {
+  id: string;
+  title: string;
+  type: LokiDocumentType;
+  /** Date d'obtention ou de dernière administration, ISO (YYYY-MM-DD). */
+  date?: string;
+  /** Date d'échéance/rappel, ISO. */
+  dueDate?: string;
+  notes?: string;
+  /** Lien vers le document scanné, stocké sur un Google Drive externe — pas de photo dans l'outil. */
+  driveLink?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface WeightEntry {
+  id: string;
+  date: string;
+  weightKg: number;
+  createdAt: number;
+}
+
+export type TreatmentType = "antiparasitaire" | "vermifuge" | "autre";
+
+export interface Treatment {
+  id: string;
+  type: TreatmentType;
+  product?: string;
+  date: string;
+  nextDueDate?: string;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface VetContact {
+  id: string;
+  country: string;
+  city?: string;
+  name?: string;
+  address?: string;
+  phone?: string;
+  notes?: string;
+  /** true pour les entrées de la présélection initiale — non supprimables, seulement complétables. */
+  prefilled?: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface BorderChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+export interface BorderRequirement {
+  /** Utilise le nom du pays comme identifiant — une seule fiche par pays. */
+  id: string;
+  country: string;
+  items: BorderChecklistItem[];
+  notes?: string;
+  updatedAt: number;
+}

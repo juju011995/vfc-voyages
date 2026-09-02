@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { CalendarPage } from "./CalendarPage";
+import { LokiPage } from "./LokiPage";
 import "./PlusPage.css";
 
-type PlusSubPage = "menu" | "calendrier";
+type PlusSubPage = "menu" | "calendrier" | "loki";
 
 interface PlusPageProps {
   onOpenTaches: () => void;
@@ -11,7 +12,7 @@ interface PlusPageProps {
 export function PlusPage({ onOpenTaches }: PlusPageProps) {
   const [subPage, setSubPage] = useState<PlusSubPage>("menu");
 
-  if (subPage === "calendrier") {
+  if (subPage === "calendrier" || subPage === "loki") {
     return (
       <div className="plus-page">
         <button
@@ -21,7 +22,11 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         >
           ← Retour
         </button>
-        <CalendarPage onOpenTaches={onOpenTaches} />
+        {subPage === "calendrier" ? (
+          <CalendarPage onOpenTaches={onOpenTaches} />
+        ) : (
+          <LokiPage onOpenTaches={onOpenTaches} />
+        )}
       </div>
     );
   }
@@ -37,8 +42,16 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         <span className="plus-page__menu-item-arrow">→</span>
       </button>
 
+      <button
+        type="button"
+        className="plus-page__menu-item"
+        onClick={() => setSubPage("loki")}
+      >
+        <span>Loki</span>
+        <span className="plus-page__menu-item-arrow">→</span>
+      </button>
+
       <div className="plus-page__grid">
-        <PlaceholderCard title="Loki" text="Module à venir" />
         <PlaceholderCard title="Statistiques" text="Module à venir" />
         <PlaceholderCard title="Paramètres" text="Module à venir" />
       </div>

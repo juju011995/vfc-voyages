@@ -1,0 +1,79 @@
+.treatment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.treatment-list__empty {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  padding: 10px 0;
+}
+
+.treatment-list__row {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.treatment-list__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+.treatment-list__type {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--color-status-a-faire);
+  color: var(--color-action-contrast);
+}
+
+.treatment-list__type--vaccin {
+  background: var(--color-status-fait);
+}
+
+.treatment-list__info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.treatment-list__title {
+  font-weight: 700;
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treatment-list__date {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+.treatment-list__due--overdue {
+  color: var(--color-alert);
+  font-weight: 700;
+}
+
+.treatment-list__link-icon {
+  flex: 0 0 auto;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}

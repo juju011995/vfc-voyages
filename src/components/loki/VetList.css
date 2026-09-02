@@ -1,0 +1,68 @@
+.vet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.vet-list__group {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.vet-list__group h4 {
+  margin: 0 0 8px;
+  font-family: var(--font-heading);
+  font-size: 14px;
+}
+
+.vet-list__group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vet-list__group li button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+}
+
+.vet-list__placeholder {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.vet-list__name {
+  font-weight: 700;
+}
+
+.vet-list__city,
+.vet-list__phone {
+  color: var(--color-text-secondary);
+}
+
+.vet-list__add {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  color: var(--color-action);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}

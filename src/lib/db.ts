@@ -5,6 +5,7 @@
 
 import { createStore, get, set, del, keys } from "idb-keyval";
 import type {
+  BorderRequirement,
   BudgetPlan,
   BudgetSettings,
   CalendarEvent,
@@ -12,13 +13,18 @@ import type {
   ExchangeRates,
   Expense,
   GpxTrack,
+  LokiDocument,
   MapSettings,
   RouteSegment,
   Stop,
   Task,
   TaskTag,
+  Treatment,
+  VetContact,
+  WeightEntry,
 } from "./types";
 import { pickNextTagColor } from "./tagColors";
+import { BORDER_CHECKLIST_BY_COUNTRY, LOKI_COUNTRIES } from "./lokiData";
 
 // Un seul object store IndexedDB pour toute l'app : les clés préfixées par
 // module évitent d'avoir à gérer des montées de version IndexedDB à chaque
@@ -40,6 +46,12 @@ const EXCHANGE_RATES_KEY = "exchange-rates";
 const TASK_TAG_PREFIX = "task-tag:";
 const TASK_PREFIX = "task:";
 const CALENDAR_EVENT_PREFIX = "calendar-event:";
+
+const LOKI_DOCUMENT_PREFIX = "loki-document:";
+const WEIGHT_ENTRY_PREFIX = "weight-entry:";
+const TREATMENT_PREFIX = "treatment:";
+const VET_CONTACT_PREFIX = "vet-contact:";
+const BORDER_REQUIREMENT_PREFIX = "border-requirement:";
 
 function stopKey(id: string) {
   return `${STOPS_PREFIX}${id}`;
@@ -456,4 +468,168 @@ export async function saveCalendarEvent(event: CalendarEvent): Promise<void> {
 
 export async function deleteCalendarEvent(id: string): Promise<void> {
   await del(calendarEventKey(id), store);
+}
+
+// ---------------------------------------------------------------------------
+// Module Loki
+
+function lokiDocumentKey(id: string) {
+  return `${LOKI_DOCUMENT_PREFIX}${id}`;
+}
+
+function weightEntryKey(id: string) {
+  return `${WEIGHT_ENTRY_PREFIX}${id}`;
+}
+
+function treatmentKey(id: string) {
+  return `${TREATMENT_PREFIX}${id}`;
+}
+
+function vetContactKey(id: string) {
+  return `${VET_CONTACT_PREFIX}${id}`;
+}
+
+function borderRequirementKey(country: string) {
+  return `${BORDER_REQUIREMENT_PREFIX}${country}`;
+}
+
+export async function listLokiDocuments(): Promise<LokiDocument[]> {
+  const allKeys = await keys(store);
+  const docKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(LOKI_DOCUMENT_PREFIX),
+  );
+  const docs = await Promise.all(docKeys.map((k) => get<LokiDocument>(k, store)));
+  return docs
+    .filter((d): d is LokiDocument => Boolean(d))
+    .sort((a, b) => (a.dueDate ?? a.date ?? "").localeCompare(b.dueDate ?? b.date ?? ""));
+}
+
+export async function saveLokiDocument(doc: LokiDocument): Promise<void> {
+  await set(lokiDocumentKey(doc.id), doc, store);
+}
+
+export async function deleteLokiDocument(id: string): Promise<void> {
+  await del(lokiDocumentKey(id), store);
+}
+
+export async function listWeightEntries(): Promise<WeightEntry[]> {
+  const allKeys = await keys(store);
+  const entryKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(WEIGHT_ENTRY_PREFIX),
+  );
+  const entries = await Promise.all(entryKeys.map((k) => get<WeightEntry>(k, store)));
+  return entries
+    .filter((e): e is WeightEntry => Boolean(e))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function saveWeightEntry(entry: WeightEntry): Promise<void> {
+  await set(weightEntryKey(entry.id), entry, store);
+}
+
+export async function deleteWeightEntry(id: string): Promise<void> {
+  await del(weightEntryKey(id), store);
+}
+
+export async function listTreatments(): Promise<Treatment[]> {
+  const allKeys = await keys(store);
+  const treatmentKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(TREATMENT_PREFIX),
+  );
+  const treatments = await Promise.all(treatmentKeys.map((k) => get<Treatment>(k, store)));
+  return treatments
+    .filter((t): t is Treatment => Boolean(t))
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export async function saveTreatment(treatment: Treatment): Promise<void> {
+  await set(treatmentKey(treatment.id), treatment, store);
+}
+
+export async function deleteTreatment(id: string): Promise<void> {
+  await del(treatmentKey(id), store);
+}
+
+function defaultVetId(country: string) {
+  return `default-${country}`;
+}
+
+/**
+ * Liste les vétérinaires, en complétant automatiquement une fiche par pays
+ * de l'itinéraire type si elle n'existe pas encore. Identifiants
+ * déterministes (un par pays) : un double appel concurrent réécrit la même
+ * fiche au lieu d'en créer une en double.
+ */
+export async function listVetContacts(): Promise<VetContact[]> {
+  const allKeys = await keys(store);
+  const vetKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(VET_CONTACT_PREFIX),
+  );
+  const existing = await Promise.all(vetKeys.map((k) => get<VetContact>(k, store)));
+  let list = existing.filter((v): v is VetContact => Boolean(v));
+
+  const prefilledCountries = new Set(list.filter((v) => v.prefilled).map((v) => v.country));
+  const missing = LOKI_COUNTRIES.filter((c) => !prefilledCountries.has(c));
+  if (missing.length > 0) {
+    const now = Date.now();
+    const toCreate: VetContact[] = missing.map((country) => ({
+      id: defaultVetId(country),
+      country,
+      prefilled: true,
+      createdAt: now,
+      updatedAt: now,
+    }));
+    await Promise.all(toCreate.map((v) => set(vetContactKey(v.id), v, store)));
+    list = [...list, ...toCreate];
+  }
+
+  return list.sort(
+    (a, b) => a.country.localeCompare(b.country) || (a.city ?? "").localeCompare(b.city ?? ""),
+  );
+}
+
+export async function saveVetContact(contact: VetContact): Promise<void> {
+  await set(vetContactKey(contact.id), contact, store);
+}
+
+export async function deleteVetContact(id: string): Promise<void> {
+  await del(vetContactKey(id), store);
+}
+
+/**
+ * Liste les exigences frontalières, une fiche par pays — pré-remplies à
+ * partir de BORDER_CHECKLIST_BY_COUNTRY si absentes. Id = nom du pays, donc
+ * naturellement idempotent (pas de garde anti-doublon nécessaire).
+ */
+export async function listBorderRequirements(): Promise<BorderRequirement[]> {
+  const allKeys = await keys(store);
+  const reqKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(BORDER_REQUIREMENT_PREFIX),
+  );
+  const existing = await Promise.all(reqKeys.map((k) => get<BorderRequirement>(k, store)));
+  let list = existing.filter((r): r is BorderRequirement => Boolean(r));
+
+  const existingCountries = new Set(list.map((r) => r.country));
+  const missing = LOKI_COUNTRIES.filter((c) => !existingCountries.has(c));
+  if (missing.length > 0) {
+    const now = Date.now();
+    const toCreate: BorderRequirement[] = missing.map((country) => ({
+      id: country,
+      country,
+      items: (BORDER_CHECKLIST_BY_COUNTRY[country] ?? []).map((label, i) => ({
+        id: `${country}-${i}`,
+        label,
+        done: false,
+      })),
+      updatedAt: now,
+    }));
+    await Promise.all(toCreate.map((r) => set(borderRequirementKey(r.id), r, store)));
+    list = [...list, ...toCreate];
+  }
+
+  return list.sort((a, b) => a.country.localeCompare(b.country));
+}
+
+export async function saveBorderRequirement(req: BorderRequirement): Promise<void> {
+  await set(borderRequirementKey(req.id), req, store);
 }

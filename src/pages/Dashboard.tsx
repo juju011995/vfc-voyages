@@ -8,24 +8,30 @@ import {
   getBudgetSettings,
   listTasks,
   listCalendarEvents,
+  listLokiDocuments,
+  listTreatments,
 } from "../lib/db";
 import type {
   BudgetPlan,
   BudgetSettings,
   CalendarEvent,
   Expense,
+  LokiDocument,
   RouteSegment,
   Stop,
   Task,
+  Treatment,
 } from "../lib/types";
 import { countTasks } from "../lib/taskCalc";
 import { buildAgenda, getUpcomingAgenda } from "../lib/calendarCalc";
+import { getUpcomingLokiDeadlines } from "../lib/lokiCalc";
 import { statusColor } from "../components/map/mapColors";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
 import { BudgetSummaryCard } from "../components/budget/BudgetSummaryCard";
 import { TaskSummaryCard } from "../components/tasks/TaskSummaryCard";
 import { UpcomingEventCard } from "../components/calendar/UpcomingEventCard";
+import { LokiSummaryCard } from "../components/loki/LokiSummaryCard";
 import "./Dashboard.css";
 
 interface DashboardProps {
@@ -58,6 +64,8 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
   const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [lokiDocuments, setLokiDocuments] = useState<LokiDocument[]>([]);
+  const [treatments, setTreatments] = useState<Treatment[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +102,13 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
       const loadedEvents = await listCalendarEvents();
       if (!cancelled) setCalendarEvents(loadedEvents);
     })();
+    (async () => {
+      const [docs, treats] = await Promise.all([listLokiDocuments(), listTreatments()]);
+      if (!cancelled) {
+        setLokiDocuments(docs);
+        setTreatments(treats);
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -101,6 +116,7 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
 
   const taskCounts = countTasks(tasks);
   const nextAgendaItem = getUpcomingAgenda(buildAgenda(calendarEvents, tasks), 1)[0];
+  const nextLokiDeadline = getUpcomingLokiDeadlines(lokiDocuments, treatments, 1)[0];
 
   const visited = stops.filter((s) => s.status === "visite").length;
   const totalKm = segments.reduce((sum, s) => sum + s.distanceMeters, 0) / 1000;
@@ -220,8 +236,16 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
         <UpcomingEventCard item={nextAgendaItem} />
       </button>
 
+      <button
+        type="button"
+        className="dashboard__task-card"
+        onClick={onOpenPlus}
+        aria-label="Ouvrir le module Loki"
+      >
+        <LokiSummaryCard deadline={nextLokiDeadline} />
+      </button>
+
       <div className="dashboard__grid">
-        <PlaceholderCard title="Loki" text="Module à venir" />
         <PlaceholderCard title="Statistiques" text="Module à venir" />
       </div>
     </div>
