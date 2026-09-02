@@ -1,0 +1,96 @@
+/*
+  Design tokens — Charte graphique V2 "Outil de voyage — Toyota Hilux & cellule pop-up"
+  Mode sombre = mode principal. Deux familles de couleur jamais mélangées :
+  - Fonctionnel (terracotta) = actions uniquement (boutons, CTA, liens, onglet actif)
+  - Identité (bleu ardoise / prune) = personnes uniquement (avatars, filtres "qui", libellés)
+*/
+
+:root {
+  /* -- Fonctionnel : statuts & actions (mode clair) -- */
+  --color-action: #8c491a;          /* terracotta profond — boutons, CTA, lien, onglet actif */
+  --color-action-contrast: #f9f4ed; /* texte sur fond action */
+  --color-status-en-cours: #201e1d; /* encre — statut "en cours" */
+  --color-status-fait: #56633f;     /* sauge — statut "fait" / solde positif budget */
+  --color-status-a-faire: #c0b6a5;  /* neutre — statut "à faire" / éléments désactivés */
+  --color-alert: #643312;           /* alerte / dépassement budget */
+
+  /* -- Identité : personnes (mode clair) -- */
+  --color-justine: #3f6470;   /* bleu ardoise */
+  --color-nathan: #7d4a52;    /* prune */
+
+  /* -- Surfaces & texte (mode clair) -- */
+  --color-bg: #ebddc5;             /* sable — fond de page */
+  --color-surface: #f9f4ed;        /* crème — cartes */
+  --color-surface-raised: #ffffff;
+  --color-text: #201e1d;           /* encre */
+  --color-text-secondary: #645c50;
+  --color-border: #dcd3c4;
+
+  /* -- Terracotta décoratif (jamais texte/bouton, contraste trop faible sur sable) -- */
+  --color-terracotta-decorative: #c67139;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 2px rgba(32, 30, 29, 0.06), 0 6px 16px rgba(32, 30, 29, 0.06);
+
+  --font-heading: "Baloo 2", "Quicksand", ui-rounded, "Segoe UI", sans-serif;
+  --font-body: "Nunito Sans", "Inter", system-ui, "Segoe UI", sans-serif;
+
+  color-scheme: light;
+}
+
+/* -- Mode sombre = mode principal -- */
+:root[data-theme="dark"] {
+  --color-action: #f6a06b;
+  --color-action-contrast: #2e2b25;
+  --color-status-en-cours: #f9f4ed;
+  --color-status-fait: #8fae6a;
+  --color-status-a-faire: #8a8073;
+  --color-alert: #f2a26b;
+
+  --color-justine: #8fb3c0;
+  --color-nathan: #c99aa1;
+
+  --color-bg: #2e2b25;
+  --color-surface: #474238;
+  --color-surface-raised: #524c40;
+  --color-text: #f9f4ed;
+  --color-text-secondary: #cbc2b3;
+  --color-border: #5b5546;
+
+  --color-terracotta-decorative: #e08a4f;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 20px rgba(0, 0, 0, 0.28);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-action: #f6a06b;
+    --color-action-contrast: #2e2b25;
+    --color-status-en-cours: #f9f4ed;
+    --color-status-fait: #8fae6a;
+    --color-status-a-faire: #8a8073;
+    --color-alert: #f2a26b;
+
+    --color-justine: #8fb3c0;
+    --color-nathan: #c99aa1;
+
+    --color-bg: #2e2b25;
+    --color-surface: #474238;
+    --color-surface-raised: #524c40;
+    --color-text: #f9f4ed;
+    --color-text-secondary: #cbc2b3;
+    --color-border: #5b5546;
+
+    --color-terracotta-decorative: #e08a4f;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 20px rgba(0, 0, 0, 0.28);
+
+    color-scheme: dark;
+  }
+}
