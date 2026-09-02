@@ -15,7 +15,9 @@ import {
   spentPriceEUR,
   totalPriceEUR,
   MATERIEL_STATUS_LABELS,
+  materielStatusStage,
 } from "../lib/materielCalc";
+import { STATUS_STAGE_COLOR, STATUS_TEXT_ON_COLOR } from "../lib/statusColors";
 import type { MaterielCategory, MaterielItem, MaterielItemStatus, Task } from "../lib/types";
 import { TagFilter, type TagFilterValue } from "../components/shared/TagFilter";
 import { TagManager } from "../components/shared/TagManager";
@@ -243,18 +245,29 @@ export function MaterielPage() {
       />
 
       <div className="materiel-page__status-filter" role="tablist" aria-label="Filtrer par statut">
-        {STATUS_FILTERS.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            role="tab"
-            aria-selected={statusFilter === f.value}
-            className={statusFilter === f.value ? "is-active" : ""}
-            onClick={() => setStatusFilter(f.value)}
-          >
-            {f.label}
-          </button>
-        ))}
+        {STATUS_FILTERS.map((f) => {
+          const active = statusFilter === f.value;
+          const color = f.value === "tous" ? undefined : STATUS_STAGE_COLOR[materielStatusStage(f.value)];
+          return (
+            <button
+              key={f.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={active ? "is-active" : ""}
+              style={
+                active
+                  ? color
+                    ? { background: color, color: STATUS_TEXT_ON_COLOR }
+                    : undefined
+                  : { color: "var(--color-text)" }
+              }
+              onClick={() => setStatusFilter(f.value)}
+            >
+              {f.label}
+            </button>
+          );
+        })}
       </div>
 
       <button

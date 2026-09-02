@@ -2,8 +2,9 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { Task, TaskStatus, TaskTag } from "../../lib/types";
 import type { Palette } from "../../theme/palette";
-import { isOverdue } from "../../lib/taskCalc";
+import { isOverdue, taskStatusStage } from "../../lib/taskCalc";
 import { TAG_TEXT_ON_COLOR } from "../../lib/tagColors";
+import { STATUS_STAGE_COLOR, STATUS_TEXT_ON_COLOR } from "../../lib/statusColors";
 import { PersonBadge } from "../shared/PersonBadge";
 import "./TaskCard.css";
 
@@ -77,7 +78,13 @@ export function TaskCard({ task, tag, palette, onOpen, onStatusChange }: TaskCar
       </div>
 
       <button type="button" className="task-card__body" onClick={() => onOpen(task)}>
-        <h4 className="task-card__title">{task.title}</h4>
+        <h4
+          className={
+            "task-card__title" + (task.status === "fait" ? " task-card__title--done" : "")
+          }
+        >
+          {task.title}
+        </h4>
         {task.description && (
           <p className="task-card__description">{task.description}</p>
         )}
@@ -97,16 +104,25 @@ export function TaskCard({ task, tag, palette, onOpen, onStatusChange }: TaskCar
       </button>
 
       <div className="task-card__status-toggle">
-        {STATUSES.map((status) => (
-          <button
-            key={status}
-            type="button"
-            className={status === task.status ? "is-active" : ""}
-            onClick={() => onStatusChange(task.id, status)}
-          >
-            {STATUS_LABELS[status]}
-          </button>
-        ))}
+        {STATUSES.map((status) => {
+          const color = STATUS_STAGE_COLOR[taskStatusStage(status)];
+          const active = status === task.status;
+          return (
+            <button
+              key={status}
+              type="button"
+              className={active ? "is-active" : ""}
+              style={
+                active
+                  ? { background: color, color: STATUS_TEXT_ON_COLOR, borderColor: color }
+                  : { borderColor: color }
+              }
+              onClick={() => onStatusChange(task.id, status)}
+            >
+              {STATUS_LABELS[status]}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

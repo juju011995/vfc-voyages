@@ -2,6 +2,7 @@
 // voyage mensuel du module Budget) et compteurs par statut.
 
 import type { MaterielItem, MaterielItemStatus, TaskStatus } from "./types";
+import type { StatusStage } from "./statusColors";
 
 /**
  * Mapping de statut entre une tâche et l'item Matériel qu'elle référence
@@ -61,3 +62,10 @@ export const MATERIEL_STATUS_LABELS: Record<MaterielItemStatus, string> = {
   "en-cours": "En cours",
   achete: "Acheté",
 };
+
+/** Statut d'un item en "étape" générique — pour la couleur partagée avec le module Tâches (voir statusColors.ts). */
+export function materielStatusStage(status: MaterielItemStatus): StatusStage {
+  if (status === "a-acheter") return "todo";
+  if (status === "en-cours") return "in-progress";
+  return "done";
+}

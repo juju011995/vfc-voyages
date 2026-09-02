@@ -2,13 +2,21 @@
 // pensés pour être réutilisés par de futurs modules (Loki, Calendrier) sans
 // dupliquer la donnée : voir le commentaire "Module Tâches" dans types.ts.
 
-import type { Task, TaskPriority, TaskTag } from "./types";
+import type { Task, TaskPriority, TaskStatus, TaskTag } from "./types";
+import type { StatusStage } from "./statusColors";
 
 const PRIORITY_WEIGHT: Record<TaskPriority, number> = {
   urgent: 0,
   normal: 1,
   "pas-presse": 2,
 };
+
+/** Statut d'une tâche en "étape" générique — pour la couleur partagée avec le module Matériel (voir statusColors.ts). */
+export function taskStatusStage(status: TaskStatus): StatusStage {
+  if (status === "a-faire") return "todo";
+  if (status === "en-cours") return "in-progress";
+  return "done";
+}
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);

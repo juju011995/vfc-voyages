@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { MaterielCategory, MaterielItem, MaterielItemStatus, Task } from "../../lib/types";
-import { MATERIEL_STATUS_LABELS } from "../../lib/materielCalc";
+import { MATERIEL_STATUS_LABELS, materielStatusStage } from "../../lib/materielCalc";
+import { STATUS_STAGE_COLOR, STATUS_TEXT_ON_COLOR } from "../../lib/statusColors";
 import "./MaterielItemEditor.css";
 
 interface MaterielItemEditorProps {
@@ -121,16 +122,25 @@ export function MaterielItemEditor({
       <div className="materiel-item-editor__field">
         <span>Statut</span>
         <div className="materiel-item-editor__toggle">
-          {STATUSES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              className={s === status ? "is-active" : ""}
-              onClick={() => setStatus(s)}
-            >
-              {MATERIEL_STATUS_LABELS[s]}
-            </button>
-          ))}
+          {STATUSES.map((s) => {
+            const color = STATUS_STAGE_COLOR[materielStatusStage(s)];
+            const active = s === status;
+            return (
+              <button
+                key={s}
+                type="button"
+                className={active ? "is-active" : ""}
+                style={
+                  active
+                    ? { background: color, color: STATUS_TEXT_ON_COLOR, borderColor: color }
+                    : { borderColor: color }
+                }
+                onClick={() => setStatus(s)}
+              >
+                {MATERIEL_STATUS_LABELS[s]}
+              </button>
+            );
+          })}
         </div>
       </div>
 

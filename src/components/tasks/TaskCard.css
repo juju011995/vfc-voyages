@@ -83,6 +83,11 @@
   font-size: 14px;
 }
 
+.task-card__title--done {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+}
+
 .task-card__description {
   margin: 0 0 8px;
   font-size: 12px;
@@ -113,26 +118,24 @@
 
 .task-card__status-toggle {
   display: flex;
+  gap: 5px;
+  padding: 8px;
   border-top: 1px solid var(--color-border);
 }
 
 .task-card__status-toggle button {
   flex: 1;
-  border: none;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-pill);
   background: none;
-  padding: 7px 4px;
+  padding: 5px 4px;
   font-family: var(--font-body);
   font-size: 10.5px;
   font-weight: 700;
-  color: var(--color-text-secondary);
+  color: var(--color-text);
   cursor: pointer;
 }
 
-.task-card__status-toggle button + button {
-  border-left: 1px solid var(--color-border);
-}
-
 .task-card__status-toggle button.is-active {
-  background: var(--color-action);
-  color: var(--color-action-contrast);
+  font-weight: 800;
 }

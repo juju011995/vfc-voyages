@@ -13,8 +13,9 @@ import {
   saveTask,
   saveTaskTag,
 } from "../lib/db";
-import { sortTasksForColumn } from "../lib/taskCalc";
+import { sortTasksForColumn, taskStatusStage } from "../lib/taskCalc";
 import { pickNextTagColor } from "../lib/tagColors";
+import { STATUS_STAGE_COLOR, STATUS_TEXT_ON_COLOR } from "../lib/statusColors";
 import type { Task, TaskStatus, TaskTag } from "../lib/types";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
@@ -222,18 +223,27 @@ export function TachesPage() {
       )}
 
       <div className="taches-page__mobile-tabs" role="tablist" aria-label="Statut">
-        {COLUMNS.map((col) => (
-          <button
-            key={col.status}
-            type="button"
-            role="tab"
-            aria-selected={mobileStatus === col.status}
-            className={mobileStatus === col.status ? "is-active" : ""}
-            onClick={() => setMobileStatus(col.status)}
-          >
-            {col.title} · {tasksByStatus[col.status].length}
-          </button>
-        ))}
+        {COLUMNS.map((col) => {
+          const color = STATUS_STAGE_COLOR[taskStatusStage(col.status)];
+          const active = mobileStatus === col.status;
+          return (
+            <button
+              key={col.status}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={active ? "is-active" : ""}
+              style={
+                active
+                  ? { background: color, color: STATUS_TEXT_ON_COLOR }
+                  : { color: "var(--color-text)" }
+              }
+              onClick={() => setMobileStatus(col.status)}
+            >
+              {col.title} · {tasksByStatus[col.status].length}
+            </button>
+          );
+        })}
       </div>
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>

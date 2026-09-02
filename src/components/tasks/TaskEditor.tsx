@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Payer, Task, TaskPriority, TaskStatus, TaskTag } from "../../lib/types";
 import type { Palette } from "../../theme/palette";
+import { taskStatusStage } from "../../lib/taskCalc";
+import { STATUS_STAGE_COLOR, STATUS_TEXT_ON_COLOR } from "../../lib/statusColors";
 import { PersonBadge } from "../shared/PersonBadge";
 import "./TaskEditor.css";
 
@@ -144,16 +146,25 @@ export function TaskEditor({ task, tags, palette, onClose, onSave, onDelete }: T
       <div className="task-editor__field">
         <span>Statut</span>
         <div className="task-editor__toggle">
-          {STATUSES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              className={s === status ? "is-active" : ""}
-              onClick={() => setStatus(s)}
-            >
-              {STATUS_LABELS[s]}
-            </button>
-          ))}
+          {STATUSES.map((s) => {
+            const color = STATUS_STAGE_COLOR[taskStatusStage(s)];
+            const active = s === status;
+            return (
+              <button
+                key={s}
+                type="button"
+                className={active ? "is-active" : ""}
+                style={
+                  active
+                    ? { background: color, color: STATUS_TEXT_ON_COLOR, borderColor: color }
+                    : { borderColor: color }
+                }
+                onClick={() => setStatus(s)}
+              >
+                {STATUS_LABELS[s]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
