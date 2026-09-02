@@ -10,6 +10,19 @@
   padding: 16px 0;
 }
 
+.weekly-recap__intro {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.weekly-recap__prevu-detail {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
 .weekly-recap__week {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

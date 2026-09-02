@@ -24,13 +24,24 @@
 }
 
 .category-manager__name {
-  background: none;
-  border: none;
   font-family: var(--font-body);
   font-size: 13px;
   color: var(--color-text);
-  cursor: pointer;
   padding: 4px 0;
+}
+
+.category-manager__edit {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 6px;
+  line-height: 1;
+}
+
+.category-manager__edit:hover {
+  color: var(--color-action);
 }
 
 .category-manager__item input {

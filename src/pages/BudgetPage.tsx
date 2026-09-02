@@ -21,6 +21,7 @@ import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
 import { BudgetSummaryCard } from "../components/budget/BudgetSummaryCard";
 import { PayerFilter, type PayerFilterValue } from "../components/budget/PayerFilter";
+import { CategoryFilter, type CategoryFilterValue } from "../components/budget/CategoryFilter";
 import { ExpenseForm } from "../components/budget/ExpenseForm";
 import { ExpenseTable } from "../components/budget/ExpenseTable";
 import { CategoryManager } from "../components/budget/CategoryManager";
@@ -58,6 +59,7 @@ export function BudgetPage() {
   const [loaded, setLoaded] = useState(false);
 
   const [payerFilter, setPayerFilter] = useState<PayerFilterValue>("tous");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterValue>("toutes");
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
   const [planMonth, setPlanMonth] = useState(currentMonthKey());
@@ -109,10 +111,10 @@ export function BudgetPage() {
 
   const filteredExpenses = useMemo(
     () =>
-      payerFilter === "tous"
-        ? expenses
-        : expenses.filter((e) => e.payer === payerFilter),
-    [expenses, payerFilter],
+      expenses
+        .filter((e) => payerFilter === "tous" || e.payer === payerFilter)
+        .filter((e) => categoryFilter === "toutes" || e.categoryId === categoryFilter),
+    [expenses, payerFilter, categoryFilter],
   );
 
   const weeklyRows = useMemo(
@@ -324,6 +326,12 @@ export function BudgetPage() {
               + Ajouter une dépense
             </button>
           </div>
+
+          <CategoryFilter
+            categories={categories}
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+          />
 
           {showForm && (
             <ExpenseForm

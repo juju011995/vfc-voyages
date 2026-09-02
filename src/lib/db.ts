@@ -134,31 +134,96 @@ function expenseKey(id: string) {
   return `${EXPENSE_PREFIX}${id}`;
 }
 
-/** Liste les catégories, en créant les catégories par défaut au premier appel. */
-export async function listCategories(): Promise<Category[]> {
+async function readCategoriesRaw(): Promise<Category[]> {
   const allKeys = await keys(store);
   const categoryKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(CATEGORY_PREFIX),
   );
-
-  if (categoryKeys.length === 0) {
-    const now = Date.now();
-    const defaults: Category[] = DEFAULT_CATEGORY_NAMES.map((name) => ({
-      id: crypto.randomUUID(),
-      name,
-      isDefault: true,
-      createdAt: now,
-    }));
-    await Promise.all(defaults.map((c) => set(categoryKey(c.id), c, store)));
-    return defaults;
-  }
-
   const categories = await Promise.all(
     categoryKeys.map((k) => get<Category>(k, store)),
   );
   return categories
     .filter((c): c is Category => Boolean(c))
     .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+async function seedDefaultCategories(): Promise<Category[]> {
+  const now = Date.now();
+  const defaults: Category[] = DEFAULT_CATEGORY_NAMES.map((name) => ({
+    id: crypto.randomUUID(),
+    name,
+    isDefault: true,
+    createdAt: now,
+  }));
+  await Promise.all(defaults.map((c) => set(categoryKey(c.id), c, store)));
+  return defaults;
+}
+
+/**
+ * Fusionne les catégories en double (même nom, à la casse/espaces près) :
+ * conserve la plus ancienne, reporte ses dépenses et son prévisionnel sur
+ * elle, puis supprime les doublons. Corrige aussi bien une éventuelle
+ * ancienne donnée corrompue (double appel concurrent de seedDefaultCategories,
+ * cf. React StrictMode) que tout doublon créé par erreur par l'utilisateur.
+ */
+async function dedupeCategories(categories: Category[]): Promise<Category[]> {
+  const groups = new Map<string, Category[]>();
+  for (const c of categories) {
+    const key = c.name.trim().toLowerCase();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(c);
+  }
+
+  const duplicateGroups = Array.from(groups.values()).filter((g) => g.length > 1);
+  if (duplicateGroups.length === 0) return categories;
+
+  const [expenses, plans] = await Promise.all([listExpenses(), listBudgetPlans()]);
+
+  for (const group of duplicateGroups) {
+    const [keeper, ...duplicates] = [...group].sort(
+      (a, b) => a.createdAt - b.createdAt,
+    );
+
+    for (const dup of duplicates) {
+      const affectedExpenses = expenses.filter((e) => e.categoryId === dup.id);
+      await Promise.all(
+        affectedExpenses.map((e) => saveExpense({ ...e, categoryId: keeper.id })),
+      );
+
+      const affectedPlans = plans.filter((p) => p.categoryId === dup.id);
+      for (const plan of affectedPlans) {
+        const keeperHasPlanForMonth = plans.some(
+          (p) => p.categoryId === keeper.id && p.month === plan.month,
+        );
+        if (!keeperHasPlanForMonth) {
+          await saveBudgetPlan({ ...plan, id: crypto.randomUUID(), categoryId: keeper.id });
+        }
+        await del(budgetPlanKey(plan.month, dup.id), store);
+      }
+
+      await del(categoryKey(dup.id), store);
+    }
+  }
+
+  return readCategoriesRaw();
+}
+
+// Empêche deux appels concurrents (ex. double montage d'effet en React
+// StrictMode) de semer chacun leur propre jeu de catégories par défaut.
+let categoriesSeedPromise: Promise<Category[]> | null = null;
+
+/** Liste les catégories, en créant les catégories par défaut au premier appel. */
+export async function listCategories(): Promise<Category[]> {
+  const existing = await readCategoriesRaw();
+
+  if (existing.length === 0) {
+    if (!categoriesSeedPromise) {
+      categoriesSeedPromise = seedDefaultCategories();
+    }
+    return categoriesSeedPromise;
+  }
+
+  return dedupeCategories(existing);
 }
 
 export async function saveCategory(category: Category): Promise<void> {

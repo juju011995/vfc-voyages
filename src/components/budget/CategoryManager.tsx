@@ -55,14 +55,16 @@ export function CategoryManager({
                 onKeyDown={(e) => e.key === "Enter" && commitEdit()}
               />
             ) : (
-              <button
-                type="button"
-                className="category-manager__name"
-                onClick={() => startEdit(category)}
-              >
-                {category.name}
-              </button>
+              <span className="category-manager__name">{category.name}</span>
             )}
+            <button
+              type="button"
+              className="category-manager__edit"
+              aria-label={`Renommer ${category.name}`}
+              onClick={() => startEdit(category)}
+            >
+              ✎
+            </button>
             {!category.isDefault && (
               <button
                 type="button"

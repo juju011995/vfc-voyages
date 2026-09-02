@@ -65,10 +65,18 @@ export function totalsByCategory(
   return totals;
 }
 
+/** D'où vient un prorata : le mois source et son budget mensuel plein. */
+export interface ProratedSource {
+  month: string;
+  monthlyAmountEUR: number;
+}
+
 export interface WeeklyCategoryRow {
   categoryId: string;
   reelEUR: number;
   prevuEUR: number;
+  /** Mois dont le budget mensuel a été proratisé pour obtenir prevuEUR (1 sauf semaine à cheval sur 2 mois). */
+  prevuSources: ProratedSource[];
 }
 
 export interface WeeklyRecapRow {
@@ -84,13 +92,18 @@ export interface WeeklyRecapRow {
  * jour par jour, la part quotidienne du budget du mois auquel appartient
  * chaque jour — ce qui gère nativement les semaines à cheval sur deux mois.
  */
+interface ProratedEntry {
+  amountEUR: number;
+  sources: ProratedSource[];
+}
+
 function proratedBudgetForWeek(
   weekKey: string,
   categoryIds: string[],
   plansByMonthAndCategory: Map<string, Map<string, number>>,
-): Map<string, number> {
+): Map<string, ProratedEntry> {
   const { start } = getIsoWeekRange(weekKey);
-  const prorated = new Map<string, number>();
+  const prorated = new Map<string, ProratedEntry>();
 
   for (let i = 0; i < 7; i++) {
     const day = new Date(start);
@@ -103,7 +116,13 @@ function proratedBudgetForWeek(
       const monthlyAmount = monthPlans.get(categoryId);
       if (!monthlyAmount) continue;
       const dailyShare = monthlyAmount / totalDays;
-      prorated.set(categoryId, (prorated.get(categoryId) ?? 0) + dailyShare);
+
+      const entry = prorated.get(categoryId) ?? { amountEUR: 0, sources: [] };
+      entry.amountEUR += dailyShare;
+      if (!entry.sources.some((s) => s.month === monthKey)) {
+        entry.sources.push({ month: monthKey, monthlyAmountEUR: monthlyAmount });
+      }
+      prorated.set(categoryId, entry);
     }
   }
 
@@ -154,7 +173,8 @@ export function buildWeeklyRecap(
       .map((categoryId) => ({
         categoryId,
         reelEUR: reelByCategory.get(categoryId) ?? 0,
-        prevuEUR: prevuByCategory.get(categoryId) ?? 0,
+        prevuEUR: prevuByCategory.get(categoryId)?.amountEUR ?? 0,
+        prevuSources: prevuByCategory.get(categoryId)?.sources ?? [],
       }));
 
     return {
