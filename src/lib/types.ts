@@ -122,11 +122,12 @@ export interface ExchangeRates {
 // ---------------------------------------------------------------------------
 // Module Tâches
 //
-// Liaisons croisées prévues pour de futurs modules non construits ici :
+// Liaisons croisées avec les autres modules, sans dupliquer la donnée :
 // - Loki : lira les tâches via getTasksByTagName(tasks, tags, "Loki")
 //   (src/lib/taskCalc.ts), donnée unique affichée à deux endroits.
-// - Matériel : Task.linkedMaterielItemId réserve le lien vers un item ;
-//   la synchronisation de statut viendra avec ce module.
+// - Matériel : Task.linkedMaterielItemId lie une tâche à un item du module
+//   Matériel ; leurs statuts sont synchronisés dans les deux sens par
+//   saveTask/saveMaterielItem (src/lib/db.ts).
 // - Calendrier : lira les échéances via listUpcomingDeadlines(tasks)
 //   (src/lib/taskCalc.ts) plutôt que de dupliquer la saisie.
 
@@ -155,7 +156,7 @@ export interface Task {
   dueDate?: string;
   priority: TaskPriority;
   status: TaskStatus;
-  /** Réservé pour le futur module Matériel — non utilisé pour l'instant. */
+  /** Lien vers un item du module Matériel — voir le commentaire ci-dessus. */
   linkedMaterielItemId?: string;
   createdAt: number;
   updatedAt: number;
@@ -277,4 +278,40 @@ export interface BorderRequirement {
 export interface LokiCountrySettings {
   manuallyAdded: string[];
   manuallyRemoved: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Module Matériel
+//
+// Le lien avec une tâche est porté uniquement par Task.linkedMaterielItemId
+// (voir le commentaire "Module Tâches" plus haut) — pas de champ retour sur
+// MaterielItem, pour éviter d'avoir deux sources de vérité à resynchroniser.
+// Le statut de l'item et celui de la tâche liée sont maintenus alignés dans
+// les deux sens par la couche de stockage (voir saveTask/saveMaterielItem
+// dans src/lib/db.ts), quel que soit le côté modifié.
+
+export type MaterielItemStatus = "a-acheter" | "en-cours" | "achete";
+
+export interface MaterielCategory {
+  id: string;
+  name: string;
+  /** Catégories fournies par défaut — non supprimables, seulement renommables. */
+  isDefault: boolean;
+  archived?: boolean;
+  /** Couleur pastel (hex) — même système que les tags de tâches. */
+  color?: string;
+  createdAt: number;
+}
+
+export interface MaterielItem {
+  id: string;
+  name: string;
+  categoryId: string;
+  quantity: number;
+  status: MaterielItemStatus;
+  /** Prix total de la ligne (pas un prix unitaire), en euros — optionnel tant que non acheté. */
+  priceEUR?: number;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
 }

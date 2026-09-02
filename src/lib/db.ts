@@ -16,6 +16,8 @@ import type {
   LokiCountrySettings,
   LokiDocument,
   MapSettings,
+  MaterielCategory,
+  MaterielItem,
   RouteSegment,
   Stop,
   Task,
@@ -26,6 +28,7 @@ import type {
 } from "./types";
 import { pickNextTagColor } from "./tagColors";
 import { getBorderChecklistFor } from "./lokiData";
+import { ITEM_STATUS_TO_TASK_STATUS, TASK_STATUS_TO_ITEM_STATUS } from "./materielCalc";
 
 // Un seul object store IndexedDB pour toute l'app : les clés préfixées par
 // module évitent d'avoir à gérer des montées de version IndexedDB à chaque
@@ -54,6 +57,13 @@ const TREATMENT_PREFIX = "treatment:";
 const VET_CONTACT_PREFIX = "vet-contact:";
 const BORDER_REQUIREMENT_PREFIX = "border-requirement:";
 const LOKI_COUNTRY_SETTINGS_KEY = "loki-country-settings";
+
+const MATERIEL_CATEGORY_PREFIX = "materiel-category:";
+const MATERIEL_ITEM_PREFIX = "materiel-item:";
+
+function materielItemKey(id: string) {
+  return `${MATERIEL_ITEM_PREFIX}${id}`;
+}
 
 function stopKey(id: string) {
   return `${STOPS_PREFIX}${id}`;
@@ -436,8 +446,25 @@ export async function listTasks(): Promise<Task[]> {
   return tasks.filter((t): t is Task => Boolean(t));
 }
 
+/**
+ * Enregistre une tâche et, si elle est liée à un item Matériel
+ * (linkedMaterielItemId), propage son statut vers cet item — voir le
+ * commentaire "Module Matériel" dans types.ts. Écriture directe (pas
+ * d'appel à saveMaterielItem) pour ne jamais boucler entre les deux.
+ */
 export async function saveTask(task: Task): Promise<void> {
   await set(taskKey(task.id), task, store);
+  if (task.linkedMaterielItemId) {
+    const item = await get<MaterielItem>(materielItemKey(task.linkedMaterielItemId), store);
+    const mappedStatus = TASK_STATUS_TO_ITEM_STATUS[task.status];
+    if (item && item.status !== mappedStatus) {
+      await set(
+        materielItemKey(item.id),
+        { ...item, status: mappedStatus, updatedAt: Date.now() },
+        store,
+      );
+    }
+  }
 }
 
 export async function deleteTask(id: string): Promise<void> {
@@ -654,4 +681,168 @@ export async function getLokiCountrySettings(): Promise<LokiCountrySettings> {
 
 export async function saveLokiCountrySettings(settings: LokiCountrySettings): Promise<void> {
   await set(LOKI_COUNTRY_SETTINGS_KEY, settings, store);
+}
+
+// ---------------------------------------------------------------------------
+// Module Matériel
+
+const DEFAULT_MATERIEL_CATEGORY_NAMES = [
+  "Cellule",
+  "Cuisine",
+  "Loki",
+  "Outils",
+  "Vêtements",
+  "Électricité",
+];
+
+function materielCategoryKey(id: string) {
+  return `${MATERIEL_CATEGORY_PREFIX}${id}`;
+}
+
+async function readMaterielCategoriesRaw(): Promise<MaterielCategory[]> {
+  const allKeys = await keys(store);
+  const categoryKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(MATERIEL_CATEGORY_PREFIX),
+  );
+  const categories = await Promise.all(
+    categoryKeys.map((k) => get<MaterielCategory>(k, store)),
+  );
+  return categories
+    .filter((c): c is MaterielCategory => Boolean(c))
+    .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+async function seedDefaultMaterielCategories(): Promise<MaterielCategory[]> {
+  const now = Date.now();
+  const usedColors: Array<string | undefined> = [];
+  const defaults: MaterielCategory[] = DEFAULT_MATERIEL_CATEGORY_NAMES.map((name) => {
+    const color = pickNextTagColor(usedColors);
+    usedColors.push(color);
+    return { id: crypto.randomUUID(), name, isDefault: true, color, createdAt: now };
+  });
+  await Promise.all(defaults.map((c) => set(materielCategoryKey(c.id), c, store)));
+  return defaults;
+}
+
+/** Même correctif anti-doublon que pour les catégories Budget et les tags de tâches (cf. dedupeCategories). */
+async function dedupeMaterielCategories(categories: MaterielCategory[]): Promise<MaterielCategory[]> {
+  const groups = new Map<string, MaterielCategory[]>();
+  for (const c of categories) {
+    const key = c.name.trim().toLowerCase();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(c);
+  }
+
+  const duplicateGroups = Array.from(groups.values()).filter((g) => g.length > 1);
+  if (duplicateGroups.length === 0) return categories;
+
+  const items = await listMaterielItems();
+
+  for (const group of duplicateGroups) {
+    const [keeper, ...duplicates] = [...group].sort(
+      (a, b) => a.createdAt - b.createdAt,
+    );
+
+    for (const dup of duplicates) {
+      const affectedItems = items.filter((i) => i.categoryId === dup.id);
+      await Promise.all(
+        affectedItems.map((i) => saveMaterielItem({ ...i, categoryId: keeper.id })),
+      );
+      await del(materielCategoryKey(dup.id), store);
+    }
+  }
+
+  return readMaterielCategoriesRaw();
+}
+
+/** Attribue une couleur pastel aux catégories qui n'en ont pas encore (données antérieures à cette fonctionnalité). */
+async function backfillMaterielCategoryColors(
+  categories: MaterielCategory[],
+): Promise<MaterielCategory[]> {
+  if (categories.every((c) => c.color)) return categories;
+
+  const usedColors = categories.map((c) => c.color);
+  const updated: MaterielCategory[] = [];
+  for (const category of categories) {
+    if (category.color) {
+      updated.push(category);
+      continue;
+    }
+    const color = pickNextTagColor(usedColors);
+    usedColors.push(color);
+    const withColor: MaterielCategory = { ...category, color };
+    await set(materielCategoryKey(category.id), withColor, store);
+    updated.push(withColor);
+  }
+  return updated;
+}
+
+// Empêche deux appels concurrents (ex. double montage d'effet en React
+// StrictMode) de semer chacun leur propre jeu de catégories par défaut.
+let materielCategoriesSeedPromise: Promise<MaterielCategory[]> | null = null;
+
+/** Liste les catégories Matériel, en créant les catégories par défaut au premier appel. */
+export async function listMaterielCategories(): Promise<MaterielCategory[]> {
+  const existing = await readMaterielCategoriesRaw();
+
+  if (existing.length === 0) {
+    if (!materielCategoriesSeedPromise) {
+      materielCategoriesSeedPromise = seedDefaultMaterielCategories();
+    }
+    return materielCategoriesSeedPromise;
+  }
+
+  const deduped = await dedupeMaterielCategories(existing);
+  return backfillMaterielCategoryColors(deduped);
+}
+
+export async function saveMaterielCategory(category: MaterielCategory): Promise<void> {
+  await set(materielCategoryKey(category.id), category, store);
+}
+
+export async function listMaterielItems(): Promise<MaterielItem[]> {
+  const allKeys = await keys(store);
+  const itemKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(MATERIEL_ITEM_PREFIX),
+  );
+  const items = await Promise.all(itemKeys.map((k) => get<MaterielItem>(k, store)));
+  return items
+    .filter((i): i is MaterielItem => Boolean(i))
+    .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+async function findTaskLinkedToItem(itemId: string): Promise<Task | undefined> {
+  const tasks = await listTasks();
+  return tasks.find((t) => t.linkedMaterielItemId === itemId);
+}
+
+/**
+ * Enregistre un item et, s'il est lié à une tâche (une tâche dont
+ * linkedMaterielItemId pointe vers cet item), propage son statut vers cette
+ * tâche. Écriture directe (pas d'appel à saveTask) pour ne jamais boucler
+ * entre les deux — voir le commentaire "Module Matériel" dans types.ts.
+ */
+export async function saveMaterielItem(item: MaterielItem): Promise<void> {
+  await set(materielItemKey(item.id), item, store);
+  const linkedTask = await findTaskLinkedToItem(item.id);
+  if (linkedTask) {
+    const mappedStatus = ITEM_STATUS_TO_TASK_STATUS[item.status];
+    if (linkedTask.status !== mappedStatus) {
+      await set(
+        taskKey(linkedTask.id),
+        { ...linkedTask, status: mappedStatus, updatedAt: Date.now() },
+        store,
+      );
+    }
+  }
+}
+
+/** Supprime un item et détache la tâche qui lui était éventuellement liée (jamais la tâche elle-même). */
+export async function deleteMaterielItem(id: string): Promise<void> {
+  await del(materielItemKey(id), store);
+  const linkedTask = await findTaskLinkedToItem(id);
+  if (linkedTask) {
+    const { linkedMaterielItemId, ...rest } = linkedTask;
+    await set(taskKey(linkedTask.id), { ...rest, updatedAt: Date.now() }, store);
+  }
 }

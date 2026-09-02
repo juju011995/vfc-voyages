@@ -10,6 +10,7 @@ import {
   listCalendarEvents,
   listLokiDocuments,
   listTreatments,
+  listMaterielItems,
 } from "../lib/db";
 import type {
   BudgetPlan,
@@ -17,6 +18,7 @@ import type {
   CalendarEvent,
   Expense,
   LokiDocument,
+  MaterielItem,
   RouteSegment,
   Stop,
   Task,
@@ -25,10 +27,12 @@ import type {
 import { countTasks } from "../lib/taskCalc";
 import { buildAgenda, getUpcomingAgenda } from "../lib/calendarCalc";
 import { getUpcomingLokiDeadlines } from "../lib/lokiCalc";
+import { countMaterielItems, spentPriceEUR, totalPriceEUR } from "../lib/materielCalc";
 import { statusColor } from "../components/map/mapColors";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
 import { BudgetSummaryCard } from "../components/budget/BudgetSummaryCard";
+import { MaterielSummaryCard } from "../components/budget/MaterielSummaryCard";
 import { TaskSummaryCard } from "../components/tasks/TaskSummaryCard";
 import { UpcomingEventCard } from "../components/calendar/UpcomingEventCard";
 import { LokiSummaryCard } from "../components/loki/LokiSummaryCard";
@@ -66,6 +70,7 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [lokiDocuments, setLokiDocuments] = useState<LokiDocument[]>([]);
   const [treatments, setTreatments] = useState<Treatment[]>([]);
+  const [materielItems, setMaterielItems] = useState<MaterielItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,6 +113,10 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
         setLokiDocuments(docs);
         setTreatments(treats);
       }
+    })();
+    (async () => {
+      const items = await listMaterielItems();
+      if (!cancelled) setMaterielItems(items);
     })();
     return () => {
       cancelled = true;
@@ -243,6 +252,20 @@ export function Dashboard({ onOpenCarte, onOpenBudget, onOpenTaches, onOpenPlus 
         aria-label="Ouvrir le module Loki"
       >
         <LokiSummaryCard deadline={nextLokiDeadline} />
+      </button>
+
+      <button
+        type="button"
+        className="dashboard__task-card"
+        onClick={onOpenPlus}
+        aria-label="Ouvrir le module Matériel"
+      >
+        <MaterielSummaryCard
+          totalEUR={totalPriceEUR(materielItems)}
+          spentEUR={spentPriceEUR(materielItems)}
+          counts={countMaterielItems(materielItems)}
+          compact
+        />
       </button>
 
       <div className="dashboard__grid">

@@ -5,6 +5,7 @@ import {
   listBudgetPlans,
   listCategories,
   listExpenses,
+  listMaterielItems,
   saveBudgetPlan,
   saveBudgetSettings,
   saveCategory,
@@ -16,7 +17,8 @@ import {
   getVisitedKm,
   totalsByCategory,
 } from "../lib/budgetCalc";
-import type { BudgetPlan, BudgetSettings, Category, Expense } from "../lib/types";
+import { countMaterielItems, spentPriceEUR, totalPriceEUR } from "../lib/materielCalc";
+import type { BudgetPlan, BudgetSettings, Category, Expense, MaterielItem } from "../lib/types";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
 import { BudgetSummaryCard } from "../components/budget/BudgetSummaryCard";
@@ -28,7 +30,7 @@ import { ExpenseTable } from "../components/budget/ExpenseTable";
 import { BudgetPlanEditor } from "../components/budget/BudgetPlanEditor";
 import { WeeklyRecap } from "../components/budget/WeeklyRecap";
 import { FuelEstimateCard } from "../components/budget/FuelEstimateCard";
-import { MaterielPlaceholderCard } from "../components/budget/MaterielPlaceholderCard";
+import { MaterielSummaryCard } from "../components/budget/MaterielSummaryCard";
 import "./BudgetPage.css";
 
 type SubTab = "apercu" | "depenses" | "previsionnel";
@@ -56,6 +58,7 @@ export function BudgetPage() {
   const [budgetPlans, setBudgetPlans] = useState<BudgetPlan[]>([]);
   const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(null);
   const [visitedKm, setVisitedKm] = useState(0);
+  const [materielItems, setMaterielItems] = useState<MaterielItem[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   const [payerFilter, setPayerFilter] = useState<PayerFilterValue>("tous");
@@ -68,18 +71,20 @@ export function BudgetPage() {
 
   useEffect(() => {
     (async () => {
-      const [cats, exps, plans, settings, km] = await Promise.all([
+      const [cats, exps, plans, settings, km, materiel] = await Promise.all([
         listCategories(),
         listExpenses(),
         listBudgetPlans(),
         getBudgetSettings(),
         getVisitedKm(),
+        listMaterielItems(),
       ]);
       setCategories(cats);
       setExpenses(exps);
       setBudgetPlans(plans);
       setBudgetSettings(settings);
       setVisitedKm(km);
+      setMaterielItems(materiel);
       setTripBudgetInput(
         settings.tripTotalBudgetEUR ? String(settings.tripTotalBudgetEUR) : "",
       );
@@ -307,7 +312,11 @@ export function BudgetPage() {
             onSave={handleSaveFuelSettings}
           />
 
-          <MaterielPlaceholderCard />
+          <MaterielSummaryCard
+            totalEUR={totalPriceEUR(materielItems)}
+            spentEUR={spentPriceEUR(materielItems)}
+            counts={countMaterielItems(materielItems)}
+          />
         </div>
       )}
 

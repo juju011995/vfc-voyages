@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { CalendarPage } from "./CalendarPage";
 import { LokiPage } from "./LokiPage";
+import { MaterielPage } from "./MaterielPage";
 import "./PlusPage.css";
 
-type PlusSubPage = "menu" | "calendrier" | "loki";
+type PlusSubPage = "menu" | "calendrier" | "loki" | "materiel";
 
 interface PlusPageProps {
   onOpenTaches: () => void;
@@ -12,7 +13,7 @@ interface PlusPageProps {
 export function PlusPage({ onOpenTaches }: PlusPageProps) {
   const [subPage, setSubPage] = useState<PlusSubPage>("menu");
 
-  if (subPage === "calendrier" || subPage === "loki") {
+  if (subPage !== "menu") {
     return (
       <div className="plus-page">
         <button
@@ -22,11 +23,9 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         >
           ← Retour
         </button>
-        {subPage === "calendrier" ? (
-          <CalendarPage onOpenTaches={onOpenTaches} />
-        ) : (
-          <LokiPage onOpenTaches={onOpenTaches} />
-        )}
+        {subPage === "calendrier" && <CalendarPage onOpenTaches={onOpenTaches} />}
+        {subPage === "loki" && <LokiPage onOpenTaches={onOpenTaches} />}
+        {subPage === "materiel" && <MaterielPage />}
       </div>
     );
   }
@@ -48,6 +47,15 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         onClick={() => setSubPage("loki")}
       >
         <span>Loki</span>
+        <span className="plus-page__menu-item-arrow">→</span>
+      </button>
+
+      <button
+        type="button"
+        className="plus-page__menu-item"
+        onClick={() => setSubPage("materiel")}
+      >
+        <span>Matériel</span>
         <span className="plus-page__menu-item-arrow">→</span>
       </button>
 
