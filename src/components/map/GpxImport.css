@@ -1,0 +1,32 @@
+.gpx-import {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gpx-import__current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+
+.gpx-import__current button {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.gpx-import__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-alert);
+}

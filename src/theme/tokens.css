@@ -15,8 +15,8 @@
   --color-alert: #643312;           /* alerte / dépassement budget */
 
   /* -- Identité : personnes (mode clair) -- */
-  --color-justine: #3f6470;   /* bleu ardoise */
-  --color-nathan: #7d4a52;    /* prune */
+  --color-justine: #7d4a52;   /* prune */
+  --color-nathan: #3f6470;    /* bleu ardoise */
 
   /* -- Surfaces & texte (mode clair) -- */
   --color-bg: #ebddc5;             /* sable — fond de page */
@@ -36,8 +36,8 @@
 
   --shadow-card: 0 1px 2px rgba(32, 30, 29, 0.06), 0 6px 16px rgba(32, 30, 29, 0.06);
 
-  --font-heading: "Baloo 2", "Quicksand", ui-rounded, "Segoe UI", sans-serif;
-  --font-body: "Nunito Sans", "Inter", system-ui, "Segoe UI", sans-serif;
+  --font-heading: "Baloo 2", ui-rounded, "Segoe UI", sans-serif;
+  --font-body: "Nunito Sans", system-ui, "Segoe UI", sans-serif;
 
   color-scheme: light;
 }
@@ -51,8 +51,8 @@
   --color-status-a-faire: #8a8073;
   --color-alert: #f2a26b;
 
-  --color-justine: #8fb3c0;
-  --color-nathan: #c99aa1;
+  --color-justine: #c99aa1;
+  --color-nathan: #8fb3c0;
 
   --color-bg: #2e2b25;
   --color-surface: #474238;
@@ -77,8 +77,8 @@
     --color-status-a-faire: #8a8073;
     --color-alert: #f2a26b;
 
-    --color-justine: #8fb3c0;
-    --color-nathan: #c99aa1;
+    --color-justine: #c99aa1;
+    --color-nathan: #8fb3c0;
 
     --color-bg: #2e2b25;
     --color-surface: #474238;
