@@ -58,6 +58,19 @@
   padding: 14px;
 }
 
-.budget-summary--compact .budget-summary__amount {
-  font-size: 20px;
+.budget-summary__compact-line {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.budget-summary__compact-line strong {
+  font-family: var(--font-heading);
+}
+
+.budget-summary__compact-sub {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }

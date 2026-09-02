@@ -24,10 +24,18 @@
 }
 
 .category-manager__name {
+  background: none;
+  border: none;
   font-family: var(--font-body);
   font-size: 13px;
   color: var(--color-text);
   padding: 4px 0;
+  cursor: pointer;
+}
+
+.category-manager__name:hover {
+  color: var(--color-action);
+  text-decoration: underline;
 }
 
 .category-manager__edit {

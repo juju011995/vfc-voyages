@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Polyline, CircleMarker } from "react-leaflet";
-import { listStops, getCachedSegment, listExpenses, getBudgetSettings } from "../lib/db";
-import type { BudgetSettings, Expense, RouteSegment, Stop } from "../lib/types";
+import {
+  listStops,
+  getCachedSegment,
+  listExpenses,
+  listBudgetPlans,
+  getBudgetSettings,
+} from "../lib/db";
+import type { BudgetPlan, BudgetSettings, Expense, RouteSegment, Stop } from "../lib/types";
 import { statusColor } from "../components/map/mapColors";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
@@ -32,6 +38,7 @@ export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
   const [stops, setStops] = useState<Stop[]>([]);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgetPlans, setBudgetPlans] = useState<BudgetPlan[]>([]);
   const [budgetSettings, setBudgetSettings] = useState<BudgetSettings | null>(null);
 
   useEffect(() => {
@@ -50,9 +57,14 @@ export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
       }
     })();
     (async () => {
-      const [exps, settings] = await Promise.all([listExpenses(), getBudgetSettings()]);
+      const [exps, plans, settings] = await Promise.all([
+        listExpenses(),
+        listBudgetPlans(),
+        getBudgetSettings(),
+      ]);
       if (!cancelled) {
         setExpenses(exps);
+        setBudgetPlans(plans);
         setBudgetSettings(settings);
       }
     })();
@@ -69,6 +81,9 @@ export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
   const thisMonthSpentEUR = expenses
     .filter((e) => e.date.startsWith(thisMonth))
     .reduce((sum, e) => sum + e.amountEUR, 0);
+  const thisMonthPrevuEUR = budgetPlans
+    .filter((p) => p.month === thisMonth)
+    .reduce((sum, p) => sum + p.amountEUR, 0);
 
   return (
     <div className="dashboard">
@@ -152,7 +167,7 @@ export function Dashboard({ onOpenCarte, onOpenBudget }: DashboardProps) {
             tripTotalBudgetEUR={budgetSettings.tripTotalBudgetEUR}
             monthLabel={monthLabel(thisMonth)}
             monthSpentEUR={thisMonthSpentEUR}
-            monthPrevuEUR={0}
+            monthPrevuEUR={thisMonthPrevuEUR}
             compact
           />
         )}

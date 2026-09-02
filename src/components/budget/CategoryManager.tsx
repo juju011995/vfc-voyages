@@ -7,6 +7,8 @@ interface CategoryManagerProps {
   onAdd: (name: string) => void;
   onRename: (id: string, name: string) => void;
   onArchive: (id: string) => void;
+  /** Clic principal sur la pastille : filtre le tableau des dépenses sur cette catégorie. */
+  onFilter: (id: string) => void;
 }
 
 export function CategoryManager({
@@ -14,6 +16,7 @@ export function CategoryManager({
   onAdd,
   onRename,
   onArchive,
+  onFilter,
 }: CategoryManagerProps) {
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -55,7 +58,14 @@ export function CategoryManager({
                 onKeyDown={(e) => e.key === "Enter" && commitEdit()}
               />
             ) : (
-              <span className="category-manager__name">{category.name}</span>
+              <button
+                type="button"
+                className="category-manager__name"
+                aria-label={`Filtrer les dépenses sur ${category.name}`}
+                onClick={() => onFilter(category.id)}
+              >
+                {category.name}
+              </button>
             )}
             <button
               type="button"

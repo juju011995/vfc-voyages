@@ -375,6 +375,10 @@ export function BudgetPage() {
             onAdd={handleAddCategory}
             onRename={handleRenameCategory}
             onArchive={handleArchiveCategory}
+            onFilter={(id) => {
+              setCategoryFilter(id);
+              setSubTab("depenses");
+            }}
           />
 
           <h3 className="budget-page__recap-title">Récap hebdomadaire</h3>
