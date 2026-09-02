@@ -41,6 +41,22 @@
   color: var(--color-text-secondary);
 }
 
+.settings-card__divider {
+  border-top: 1px solid var(--color-border);
+  margin: 2px 0;
+}
+
+.settings-card__warning {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-alert);
+}
+
+.settings-page__file-input {
+  display: none;
+}
+
 .settings-card .btn {
   align-self: flex-start;
 }

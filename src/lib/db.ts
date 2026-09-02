@@ -3,7 +3,7 @@
 // et restent lisibles/modifiables sans connexion réseau (seuls la recherche
 // de destination et le calcul d'itinéraire nécessitent le réseau).
 
-import { createStore, get, set, del, keys } from "idb-keyval";
+import { createStore, get, set, setMany, del, keys, clear } from "idb-keyval";
 import type {
   AppSettings,
   BorderRequirement,
@@ -885,4 +885,17 @@ export async function exportAllData(): Promise<Record<string, unknown>> {
     allKeys.map(async (k) => [String(k), await get(k, store)] as const),
   );
   return Object.fromEntries(entries);
+}
+
+/**
+ * Restaure l'intégralité des données de l'app à partir d'un export
+ * précédent (voir exportAllData) : vide le store puis réécrit exactement
+ * les clés fournies — un remplacement complet, pas une fusion, pour éviter
+ * un état hybride entre l'ancien contenu et la sauvegarde restaurée.
+ * L'appelant est responsable de recharger l'app ensuite (tout l'état React
+ * déjà en mémoire ailleurs dans l'app resterait sinon périmé).
+ */
+export async function importAllData(data: Record<string, unknown>): Promise<void> {
+  await clear(store);
+  await setMany(Object.entries(data), store);
 }

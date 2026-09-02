@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { exportAllData } from "../lib/db";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { exportAllData, importAllData } from "../lib/db";
 import { COMMON_CURRENCIES } from "../lib/currency";
 import { useSettings } from "../settings/SettingsProvider";
 import { useTheme, type ThemeChoice } from "../theme/ThemeProvider";
@@ -26,6 +26,8 @@ export function SettingsPage() {
   const [nathanName, setNathanName] = useState(settings.profileNames.nathan);
   const [namesSaved, setNamesSaved] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setJustineName(settings.profileNames.justine);
@@ -66,6 +68,57 @@ export function SettingsPage() {
       setExportStatus("Échec de l'export — réessaie.");
     } finally {
       setTimeout(() => setExportStatus(null), 3000);
+    }
+  }
+
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleImportFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permet de resélectionner le même fichier ensuite
+    if (!file) return;
+
+    setImportStatus("Lecture du fichier…");
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      setImportStatus("Fichier illisible — ce n'est pas un JSON valide.");
+      setTimeout(() => setImportStatus(null), 4000);
+      return;
+    }
+
+    const candidate = parsed as { app?: unknown; data?: unknown };
+    if (
+      candidate.app !== "vfc-voyages" ||
+      typeof candidate.data !== "object" ||
+      candidate.data === null
+    ) {
+      setImportStatus("Ce fichier n'est pas une sauvegarde vfc-voyages reconnue.");
+      setTimeout(() => setImportStatus(null), 4000);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Restaurer cette sauvegarde va REMPLACER toutes les données actuelles de " +
+        "l'application (Carte, Budget, Tâches, Calendrier, Loki, Matériel, " +
+        "Paramètres) par celles du fichier. Cette action est irréversible. Continuer ?",
+    );
+    if (!confirmed) {
+      setImportStatus(null);
+      return;
+    }
+
+    setImportStatus("Restauration en cours…");
+    try {
+      await importAllData(candidate.data as Record<string, unknown>);
+      setImportStatus("Restauration réussie — rechargement…");
+      window.location.reload();
+    } catch {
+      setImportStatus("Échec de la restauration.");
+      setTimeout(() => setImportStatus(null), 4000);
     }
   }
 
@@ -144,7 +197,7 @@ export function SettingsPage() {
       </div>
 
       <div className="settings-card">
-        <h3>Sauvegarde</h3>
+        <h3>Sauvegarde et restauration</h3>
         <p className="settings-card__hint">
           Télécharge une copie de toutes les données de l'application (Carte, Budget,
           Tâches, Calendrier, Loki, Matériel) au format JSON, à conserver en lieu sûr.
@@ -153,6 +206,24 @@ export function SettingsPage() {
           Télécharger mes données (JSON)
         </button>
         {exportStatus && <p className="settings-card__status">{exportStatus}</p>}
+
+        <div className="settings-card__divider" />
+
+        <p className="settings-card__warning">
+          Restaurer un fichier remplace toutes les données actuelles de
+          l'application — irréversible.
+        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="settings-page__file-input"
+          onChange={handleImportFile}
+        />
+        <button type="button" className="btn btn--secondary" onClick={handleImportClick}>
+          Importer un fichier de sauvegarde
+        </button>
+        {importStatus && <p className="settings-card__status">{importStatus}</p>}
       </div>
     </div>
   );
