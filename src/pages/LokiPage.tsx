@@ -4,6 +4,7 @@ import {
   deleteTreatment,
   deleteVetContact,
   deleteWeightEntry,
+  getLokiCountrySettings,
   listBorderRequirements,
   listLokiDocuments,
   listStops,
@@ -13,15 +14,17 @@ import {
   listVetContacts,
   listWeightEntries,
   saveBorderRequirement,
+  saveLokiCountrySettings,
   saveLokiDocument,
   saveTreatment,
   saveVetContact,
   saveWeightEntry,
 } from "../lib/db";
 import { getTasksByTagName } from "../lib/taskCalc";
-import { guessVisitedCountries, LOKI_COUNTRIES } from "../lib/lokiData";
+import { computeVisibleCountries, getDetectedCountries } from "../lib/lokiData";
 import type {
   BorderRequirement,
+  LokiCountrySettings,
   LokiDocument,
   Stop,
   Task,
@@ -41,6 +44,7 @@ import { VetList } from "../components/loki/VetList";
 import { VetEditor } from "../components/loki/VetEditor";
 import { BorderChecklist } from "../components/loki/BorderChecklist";
 import { LokiTaskList } from "../components/loki/LokiTaskList";
+import { CountryManager } from "../components/loki/CountryManager";
 import "./LokiPage.css";
 
 type SubTab = "sante" | "veterinaires" | "frontieres" | "taches";
@@ -64,6 +68,10 @@ export function LokiPage({ onOpenTaches }: LokiPageProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskTags, setTaskTags] = useState<TaskTag[]>([]);
   const [stops, setStops] = useState<Stop[]>([]);
+  const [countrySettings, setCountrySettings] = useState<LokiCountrySettings>({
+    manuallyAdded: [],
+    manuallyRemoved: [],
+  });
 
   const [editingDocumentId, setEditingDocumentId] = useState<string | undefined>();
   const [editingTreatmentId, setEditingTreatmentId] = useState<string | undefined>();
@@ -71,17 +79,21 @@ export function LokiPage({ onOpenTaches }: LokiPageProps) {
 
   useEffect(() => {
     (async () => {
-      const [docs, weights, treats, vets, borders, allTasks, tags, allStops] =
-        await Promise.all([
-          listLokiDocuments(),
-          listWeightEntries(),
-          listTreatments(),
-          listVetContacts(),
-          listBorderRequirements(),
-          listTasks(),
-          listTaskTags(),
-          listStops(),
-        ]);
+      const [docs, weights, treats, allTasks, tags, allStops, settings] = await Promise.all([
+        listLokiDocuments(),
+        listWeightEntries(),
+        listTreatments(),
+        listTasks(),
+        listTaskTags(),
+        listStops(),
+        getLokiCountrySettings(),
+      ]);
+      const detected = getDetectedCountries(allStops);
+      const desiredCountries = computeVisibleCountries(detected, settings);
+      const [vets, borders] = await Promise.all([
+        listVetContacts(desiredCountries),
+        listBorderRequirements(desiredCountries),
+      ]);
       setDocuments(docs);
       setWeightEntries(weights);
       setTreatments(treats);
@@ -90,20 +102,67 @@ export function LokiPage({ onOpenTaches }: LokiPageProps) {
       setTasks(allTasks);
       setTaskTags(tags);
       setStops(allStops);
+      setCountrySettings(settings);
       setLoaded(true);
     })();
   }, []);
 
-  const visitedCountries = useMemo(() => guessVisitedCountries(stops), [stops]);
-  const orderedCountries = useMemo(
-    () =>
-      [...LOKI_COUNTRIES].sort((a, b) => {
-        const aVisited = visitedCountries.has(a) ? 0 : 1;
-        const bVisited = visitedCountries.has(b) ? 0 : 1;
-        return aVisited - bVisited || a.localeCompare(b);
-      }),
-    [visitedCountries],
+  const detectedCountries = useMemo(() => getDetectedCountries(stops), [stops]);
+  const visibleCountries = useMemo(
+    () => computeVisibleCountries(detectedCountries, countrySettings),
+    [detectedCountries, countrySettings],
   );
+
+  async function handleAddCountry(country: string) {
+    setCountrySettings((prev) => {
+      if (prev.manuallyAdded.includes(country) && !prev.manuallyRemoved.includes(country)) {
+        return prev;
+      }
+      const next: LokiCountrySettings = {
+        manuallyAdded: prev.manuallyAdded.includes(country)
+          ? prev.manuallyAdded
+          : [...prev.manuallyAdded, country],
+        manuallyRemoved: prev.manuallyRemoved.filter((c) => c !== country),
+      };
+      saveLokiCountrySettings(next);
+      return next;
+    });
+  }
+
+  async function handleRemoveCountry(country: string) {
+    setCountrySettings((prev) => {
+      const next: LokiCountrySettings = {
+        manuallyAdded: prev.manuallyAdded.filter((c) => c !== country),
+        manuallyRemoved: prev.manuallyRemoved.includes(country)
+          ? prev.manuallyRemoved
+          : [...prev.manuallyRemoved, country],
+      };
+      saveLokiCountrySettings(next);
+      return next;
+    });
+  }
+
+  // Sème vétos/frontières pour tout nouveau pays qui apparaît dans la liste
+  // affichée (détection Carte ou ajout manuel) — jamais de suppression ici.
+  useEffect(() => {
+    if (!loaded) return;
+    const missingVetCountries = visibleCountries.filter(
+      (c) => !vetContacts.some((v) => v.country === c),
+    );
+    const missingBorderCountries = visibleCountries.filter(
+      (c) => !borderRequirements.some((r) => r.country === c),
+    );
+    if (missingVetCountries.length === 0 && missingBorderCountries.length === 0) return;
+    (async () => {
+      const [vets, borders] = await Promise.all([
+        listVetContacts(visibleCountries),
+        listBorderRequirements(visibleCountries),
+      ]);
+      setVetContacts(vets);
+      setBorderRequirements(borders);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleCountries, loaded]);
 
   const lokiTag = taskTags.find((t) => t.name.trim().toLowerCase() === "loki");
   const lokiTasks = useMemo(() => getTasksByTagName(tasks, taskTags, "Loki"), [tasks, taskTags]);
@@ -376,12 +435,18 @@ export function LokiPage({ onOpenTaches }: LokiPageProps) {
       {subTab === "veterinaires" && (
         <div className="loki-page__section">
           <p className="loki-page__hint">
-            Présélection par pays de l'itinéraire type — complète avec les
-            vraies coordonnées au fur et à mesure. Aucune adresse n'est
-            devinée automatiquement.
+            Liste liée à l'itinéraire de la Carte — ajoute ou retire un pays
+            manuellement pour préparer une destination pas encore confirmée.
+            Aucune adresse n'est devinée automatiquement.
           </p>
+          <CountryManager
+            visibleCountries={visibleCountries}
+            detectedCountries={detectedCountries}
+            onAddCountry={handleAddCountry}
+            onRemoveCountry={handleRemoveCountry}
+          />
           <VetList
-            countries={orderedCountries}
+            countries={visibleCountries}
             contactsByCountry={vetsByCountry}
             onEdit={(v) => setEditingVetId(v.id)}
             onAddForCountry={handleAddVet}
@@ -401,12 +466,16 @@ export function LokiPage({ onOpenTaches }: LokiPageProps) {
 
       {subTab === "frontieres" && (
         <div className="loki-page__section">
+          <CountryManager
+            visibleCountries={visibleCountries}
+            detectedCountries={detectedCountries}
+            onAddCountry={handleAddCountry}
+            onRemoveCountry={handleRemoveCountry}
+          />
           <BorderChecklist
-            requirements={[...borderRequirements].sort((a, b) => {
-              const aVisited = visitedCountries.has(a.country) ? 0 : 1;
-              const bVisited = visitedCountries.has(b.country) ? 0 : 1;
-              return aVisited - bVisited || a.country.localeCompare(b.country);
-            })}
+            requirements={visibleCountries
+              .map((country) => borderRequirements.find((r) => r.country === country))
+              .filter((r): r is BorderRequirement => Boolean(r))}
             onToggleItem={handleToggleBorderItem}
             onSaveNotes={handleSaveBorderNotes}
           />

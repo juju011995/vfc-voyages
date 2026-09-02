@@ -13,6 +13,7 @@ import type {
   ExchangeRates,
   Expense,
   GpxTrack,
+  LokiCountrySettings,
   LokiDocument,
   MapSettings,
   RouteSegment,
@@ -24,7 +25,7 @@ import type {
   WeightEntry,
 } from "./types";
 import { pickNextTagColor } from "./tagColors";
-import { BORDER_CHECKLIST_BY_COUNTRY, LOKI_COUNTRIES } from "./lokiData";
+import { getBorderChecklistFor } from "./lokiData";
 
 // Un seul object store IndexedDB pour toute l'app : les clés préfixées par
 // module évitent d'avoir à gérer des montées de version IndexedDB à chaque
@@ -52,6 +53,7 @@ const WEIGHT_ENTRY_PREFIX = "weight-entry:";
 const TREATMENT_PREFIX = "treatment:";
 const VET_CONTACT_PREFIX = "vet-contact:";
 const BORDER_REQUIREMENT_PREFIX = "border-requirement:";
+const LOKI_COUNTRY_SETTINGS_KEY = "loki-country-settings";
 
 function stopKey(id: string) {
   return `${STOPS_PREFIX}${id}`;
@@ -556,11 +558,13 @@ function defaultVetId(country: string) {
 
 /**
  * Liste les vétérinaires, en complétant automatiquement une fiche par pays
- * de l'itinéraire type si elle n'existe pas encore. Identifiants
- * déterministes (un par pays) : un double appel concurrent réécrit la même
- * fiche au lieu d'en créer une en double.
+ * demandé (voir computeVisibleCountries) si elle n'existe pas encore.
+ * Identifiants déterministes (un par pays) : un double appel concurrent
+ * réécrit la même fiche au lieu d'en créer une en double. Les fiches déjà
+ * saisies pour un pays qui n'est plus demandé sont conservées telles
+ * quelles — cette fonction ne supprime jamais rien.
  */
-export async function listVetContacts(): Promise<VetContact[]> {
+export async function listVetContacts(desiredCountries: string[]): Promise<VetContact[]> {
   const allKeys = await keys(store);
   const vetKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(VET_CONTACT_PREFIX),
@@ -569,7 +573,7 @@ export async function listVetContacts(): Promise<VetContact[]> {
   let list = existing.filter((v): v is VetContact => Boolean(v));
 
   const prefilledCountries = new Set(list.filter((v) => v.prefilled).map((v) => v.country));
-  const missing = LOKI_COUNTRIES.filter((c) => !prefilledCountries.has(c));
+  const missing = desiredCountries.filter((c) => !prefilledCountries.has(c));
   if (missing.length > 0) {
     const now = Date.now();
     const toCreate: VetContact[] = missing.map((country) => ({
@@ -597,11 +601,15 @@ export async function deleteVetContact(id: string): Promise<void> {
 }
 
 /**
- * Liste les exigences frontalières, une fiche par pays — pré-remplies à
- * partir de BORDER_CHECKLIST_BY_COUNTRY si absentes. Id = nom du pays, donc
- * naturellement idempotent (pas de garde anti-doublon nécessaire).
+ * Liste les exigences frontalières, une fiche par pays demandé (voir
+ * computeVisibleCountries) — pré-remplies à partir de getBorderChecklistFor
+ * si absentes. Id = nom du pays, donc naturellement idempotent (pas de garde
+ * anti-doublon nécessaire). Les fiches déjà saisies pour un pays qui n'est
+ * plus demandé sont conservées telles quelles.
  */
-export async function listBorderRequirements(): Promise<BorderRequirement[]> {
+export async function listBorderRequirements(
+  desiredCountries: string[],
+): Promise<BorderRequirement[]> {
   const allKeys = await keys(store);
   const reqKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(BORDER_REQUIREMENT_PREFIX),
@@ -610,13 +618,13 @@ export async function listBorderRequirements(): Promise<BorderRequirement[]> {
   let list = existing.filter((r): r is BorderRequirement => Boolean(r));
 
   const existingCountries = new Set(list.map((r) => r.country));
-  const missing = LOKI_COUNTRIES.filter((c) => !existingCountries.has(c));
+  const missing = desiredCountries.filter((c) => !existingCountries.has(c));
   if (missing.length > 0) {
     const now = Date.now();
     const toCreate: BorderRequirement[] = missing.map((country) => ({
       id: country,
       country,
-      items: (BORDER_CHECKLIST_BY_COUNTRY[country] ?? []).map((label, i) => ({
+      items: getBorderChecklistFor(country).map((label, i) => ({
         id: `${country}-${i}`,
         label,
         done: false,
@@ -632,4 +640,18 @@ export async function listBorderRequirements(): Promise<BorderRequirement[]> {
 
 export async function saveBorderRequirement(req: BorderRequirement): Promise<void> {
   await set(borderRequirementKey(req.id), req, store);
+}
+
+const DEFAULT_LOKI_COUNTRY_SETTINGS: LokiCountrySettings = {
+  manuallyAdded: [],
+  manuallyRemoved: [],
+};
+
+export async function getLokiCountrySettings(): Promise<LokiCountrySettings> {
+  const settings = await get<LokiCountrySettings>(LOKI_COUNTRY_SETTINGS_KEY, store);
+  return settings ?? DEFAULT_LOKI_COUNTRY_SETTINGS;
+}
+
+export async function saveLokiCountrySettings(settings: LokiCountrySettings): Promise<void> {
+  await set(LOKI_COUNTRY_SETTINGS_KEY, settings, store);
 }

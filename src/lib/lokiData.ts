@@ -8,7 +8,7 @@
 // pré-remplie reste marquée « à vérifier avant le départ » dans l'interface,
 // conformément au cahier des charges.
 
-import type { Stop } from "./types";
+import type { LokiCountrySettings, Stop } from "./types";
 
 export const LOKI_COUNTRIES = [
   "Espagne",
@@ -32,7 +32,7 @@ export const LOKI_COUNTRIES = [
   "Grèce",
 ];
 
-const EU_PET_PASSPORT_BASICS = [
+export const EU_PET_PASSPORT_BASICS = [
   "Puce électronique ISO 11784/11785 posée AVANT la vaccination antirabique",
   "Vaccination antirabique valide (au moins 21 jours après une primo-vaccination)",
   "Passeport européen pour animal de compagnie à jour, avec puce et vaccin renseignés",
@@ -77,21 +77,51 @@ export const BORDER_CHECKLIST_BY_COUNTRY: Record<string, string[]> = {
   ],
 };
 
+/** Checklist pour un pays donné, avec repli sur le socle UE générique si le pays n'est pas dans la liste ci-dessus (ex. ajouté manuellement). */
+export function getBorderChecklistFor(country: string): string[] {
+  return BORDER_CHECKLIST_BY_COUNTRY[country] ?? EU_PET_PASSPORT_BASICS;
+}
+
 /**
- * Vérifie grossièrement si un pays de la liste apparaît dans le nom d'une
- * étape du module Carte (ex. "Porto, Portugal") — sert uniquement à mettre
- * en avant les pays déjà présents sur l'itinéraire réel, la présélection
- * complète reste toujours les 19 pays ci-dessus.
+ * Pays réellement présents sur l'itinéraire, d'après Stop.country (donnée
+ * structurée de Nominatim, fiable). Pour d'anciennes étapes créées avant
+ * l'ajout de ce champ, on retombe sur une recherche du nom du pays dans le
+ * nom de l'étape (ex. "Porto, Portugal") — best effort, seulement en repli.
  */
-export function guessVisitedCountries(stops: Stop[]): Set<string> {
-  const visited = new Set<string>();
+export function getDetectedCountries(stops: Stop[]): Set<string> {
+  const detected = new Set<string>();
   for (const stop of stops) {
+    if (stop.country) {
+      detected.add(stop.country);
+      continue;
+    }
     const lowerName = stop.name.toLowerCase();
     for (const country of LOKI_COUNTRIES) {
       if (lowerName.includes(country.toLowerCase())) {
-        visited.add(country);
+        detected.add(country);
       }
     }
   }
-  return visited;
+  return detected;
+}
+
+/**
+ * Liste des pays à afficher dans les onglets Vétérinaires/Frontières :
+ * ceux détectés sur l'itinéraire, plus les ajouts manuels, moins les
+ * retraits manuels (qui l'emportent toujours). Ne touche à aucune donnée
+ * déjà saisie — seulement à ce qui est affiché.
+ */
+export function computeVisibleCountries(
+  detected: Set<string>,
+  settings: LokiCountrySettings,
+): string[] {
+  const removed = new Set(settings.manuallyRemoved);
+  const visible = new Set<string>();
+  for (const country of detected) {
+    if (!removed.has(country)) visible.add(country);
+  }
+  for (const country of settings.manuallyAdded) {
+    if (!removed.has(country)) visible.add(country);
+  }
+  return [...visible].sort((a, b) => a.localeCompare(b));
 }

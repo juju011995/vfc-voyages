@@ -12,6 +12,8 @@ export interface Stop {
   name: string;
   lat: number;
   lng: number;
+  /** Pays (nom lisible), extrait des données structurées de Nominatim lors de la recherche — utilisé par le module Loki. */
+  country?: string;
   /** Position dans l'itinéraire — source de vérité pour l'ordre des étapes. */
   order: number;
   status: StopStatus;
@@ -261,4 +263,18 @@ export interface BorderRequirement {
   items: BorderChecklistItem[];
   notes?: string;
   updatedAt: number;
+}
+
+/**
+ * Pays affichés dans les onglets Vétérinaires/Frontières, en plus de ceux
+ * détectés automatiquement depuis les étapes du module Carte (Stop.country).
+ * Un pays retiré manuellement reste retiré même s'il est toujours présent
+ * sur l'itinéraire ; un pays ajouté manuellement reste affiché même sans
+ * étape (ou si ses étapes sont supprimées). Ne supprime jamais les données
+ * (VetContact, BorderRequirement) déjà saisies pour un pays — seulement sa
+ * présence dans la liste affichée.
+ */
+export interface LokiCountrySettings {
+  manuallyAdded: string[];
+  manuallyRemoved: string[];
 }

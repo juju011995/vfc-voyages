@@ -99,6 +99,7 @@ export function CartePage() {
       name: result.displayName.split(",").slice(0, 2).join(","),
       lat: result.lat,
       lng: result.lng,
+      country: result.country,
       order: stops.length,
       status: "a-visiter",
       createdAt: Date.now(),

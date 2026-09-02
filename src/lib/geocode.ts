@@ -8,6 +8,8 @@ export interface GeocodeResult {
   displayName: string;
   lat: number;
   lng: number;
+  /** Pays (nom lisible), extrait des données structurées de Nominatim — sert au module Loki. */
+  country?: string;
 }
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
@@ -23,7 +25,9 @@ export async function searchPlace(
   url.searchParams.set("q", trimmed);
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("limit", "6");
-  url.searchParams.set("addressdetails", "0");
+  // Détails d'adresse structurés (dont address.country) : plus fiable qu'un
+  // découpage du display_name pour savoir dans quel pays est une étape.
+  url.searchParams.set("addressdetails", "1");
 
   const response = await fetch(url.toString(), {
     signal,
@@ -43,6 +47,7 @@ export async function searchPlace(
     display_name: string;
     lat: string;
     lon: string;
+    address?: { country?: string };
   }> = await response.json();
 
   return data.map((item) => ({
@@ -50,5 +55,6 @@ export async function searchPlace(
     displayName: item.display_name,
     lat: parseFloat(item.lat),
     lng: parseFloat(item.lon),
+    country: item.address?.country,
   }));
 }
