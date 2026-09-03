@@ -1,9 +1,11 @@
-// Couche de persistance — IndexedDB via idb-keyval.
-// Toutes les données du module Carte (étapes, tracé GPX, réglages) vivent ici
-// et restent lisibles/modifiables sans connexion réseau (seuls la recherche
-// de destination et le calcul d'itinéraire nécessitent le réseau).
+// Couche de persistance — Firestore (cache local persistant via IndexedDB),
+// voir kv.ts. Toutes les données de l'app vivent ici et restent
+// lisibles/modifiables sans connexion réseau : le SDK Firestore sert le
+// cache local instantanément et rejoue les écritures faites hors-ligne dès
+// que la connexion revient. Seuls la recherche de destination, le calcul
+// d'itinéraire et les taux de change nécessitent une connexion active.
 
-import { createStore, get, set, setMany, del, keys, clear } from "idb-keyval";
+import { get, set, setMany, del, keys, clear } from "./kv";
 import type {
   AdminDocument,
   AppSettings,
@@ -35,11 +37,8 @@ import { pickNextTagColor } from "./tagColors";
 import { getBorderChecklistFor } from "./lokiData";
 import { ITEM_STATUS_TO_TASK_STATUS, TASK_STATUS_TO_ITEM_STATUS } from "./materielCalc";
 
-// Un seul object store IndexedDB pour toute l'app : les clés préfixées par
-// module évitent d'avoir à gérer des montées de version IndexedDB à chaque
-// nouveau module (idb-keyval ne recrée les object stores qu'à la création
-// de la base).
-const store = createStore("vfc-voyages", "carte");
+// Une seule collection Firestore "kv" pour toute l'app : les clés préfixées
+// par module évitent d'avoir à gérer des sous-collections par type.
 
 const STOPS_PREFIX = "stop:";
 const SEGMENT_CACHE_PREFIX = "segment-cache:";
@@ -79,57 +78,57 @@ function segmentCacheKey(fromId: string, toId: string) {
 }
 
 export async function listStops(): Promise<Stop[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const stopKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(STOPS_PREFIX),
   );
-  const stops = await Promise.all(stopKeys.map((k) => get<Stop>(k, store)));
+  const stops = await Promise.all(stopKeys.map((k) => get<Stop>(k)));
   return stops
     .filter((s): s is Stop => Boolean(s))
     .sort((a, b) => a.order - b.order);
 }
 
 export async function saveStop(stop: Stop): Promise<void> {
-  await set(stopKey(stop.id), stop, store);
+  await set(stopKey(stop.id), stop);
 }
 
 export async function saveStops(stops: Stop[]): Promise<void> {
-  await Promise.all(stops.map((s) => set(stopKey(s.id), s, store)));
+  await Promise.all(stops.map((s) => set(stopKey(s.id), s)));
 }
 
 export async function deleteStop(id: string): Promise<void> {
-  await del(stopKey(id), store);
-  const allKeys = await keys(store);
+  await del(stopKey(id));
+  const allKeys = await keys();
   const relatedSegmentKeys = allKeys.filter(
     (k): k is string =>
       typeof k === "string" &&
       k.startsWith(SEGMENT_CACHE_PREFIX) &&
       k.includes(id),
   );
-  await Promise.all(relatedSegmentKeys.map((k) => del(k, store)));
+  await Promise.all(relatedSegmentKeys.map((k) => del(k)));
 }
 
 export async function getCachedSegment(
   fromId: string,
   toId: string,
 ): Promise<RouteSegment | undefined> {
-  return get<RouteSegment>(segmentCacheKey(fromId, toId), store);
+  return get<RouteSegment>(segmentCacheKey(fromId, toId));
 }
 
 export async function cacheSegment(segment: RouteSegment): Promise<void> {
-  await set(segmentCacheKey(segment.fromId, segment.toId), segment, store);
+  await set(segmentCacheKey(segment.fromId, segment.toId), segment);
 }
 
 export async function getGpxTrack(): Promise<GpxTrack | undefined> {
-  return get<GpxTrack>(GPX_TRACK_KEY, store);
+  return get<GpxTrack>(GPX_TRACK_KEY);
 }
 
 export async function saveGpxTrack(track: GpxTrack): Promise<void> {
-  await set(GPX_TRACK_KEY, track, store);
+  await set(GPX_TRACK_KEY, track);
 }
 
 export async function clearGpxTrack(): Promise<void> {
-  await del(GPX_TRACK_KEY, store);
+  await del(GPX_TRACK_KEY);
 }
 
 const DEFAULT_MAP_SETTINGS: MapSettings = {
@@ -138,12 +137,12 @@ const DEFAULT_MAP_SETTINGS: MapSettings = {
 };
 
 export async function getMapSettings(): Promise<MapSettings> {
-  const settings = await get<MapSettings>(MAP_SETTINGS_KEY, store);
+  const settings = await get<MapSettings>(MAP_SETTINGS_KEY);
   return settings ?? DEFAULT_MAP_SETTINGS;
 }
 
 export async function saveMapSettings(settings: MapSettings): Promise<void> {
-  await set(MAP_SETTINGS_KEY, settings, store);
+  await set(MAP_SETTINGS_KEY, settings);
 }
 
 // ---------------------------------------------------------------------------
@@ -172,12 +171,12 @@ function expenseKey(id: string) {
 }
 
 async function readCategoriesRaw(): Promise<Category[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const categoryKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(CATEGORY_PREFIX),
   );
   const categories = await Promise.all(
-    categoryKeys.map((k) => get<Category>(k, store)),
+    categoryKeys.map((k) => get<Category>(k)),
   );
   return categories
     .filter((c): c is Category => Boolean(c))
@@ -192,7 +191,7 @@ async function seedDefaultCategories(): Promise<Category[]> {
     isDefault: true,
     createdAt: now,
   }));
-  await Promise.all(defaults.map((c) => set(categoryKey(c.id), c, store)));
+  await Promise.all(defaults.map((c) => set(categoryKey(c.id), c)));
   return defaults;
 }
 
@@ -235,10 +234,10 @@ async function dedupeCategories(categories: Category[]): Promise<Category[]> {
         if (!keeperHasPlanForMonth) {
           await saveBudgetPlan({ ...plan, id: crypto.randomUUID(), categoryId: keeper.id });
         }
-        await del(budgetPlanKey(plan.month, dup.id), store);
+        await del(budgetPlanKey(plan.month, dup.id));
       }
 
-      await del(categoryKey(dup.id), store);
+      await del(categoryKey(dup.id));
     }
   }
 
@@ -264,31 +263,31 @@ export async function listCategories(): Promise<Category[]> {
 }
 
 export async function saveCategory(category: Category): Promise<void> {
-  await set(categoryKey(category.id), category, store);
+  await set(categoryKey(category.id), category);
 }
 
 export async function listBudgetPlans(month?: string): Promise<BudgetPlan[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const planKeys = allKeys.filter(
     (k): k is string =>
       typeof k === "string" &&
       k.startsWith(month ? `${BUDGET_PLAN_PREFIX}${month}:` : BUDGET_PLAN_PREFIX),
   );
-  const plans = await Promise.all(planKeys.map((k) => get<BudgetPlan>(k, store)));
+  const plans = await Promise.all(planKeys.map((k) => get<BudgetPlan>(k)));
   return plans.filter((p): p is BudgetPlan => Boolean(p));
 }
 
 export async function saveBudgetPlan(plan: BudgetPlan): Promise<void> {
-  await set(budgetPlanKey(plan.month, plan.categoryId), plan, store);
+  await set(budgetPlanKey(plan.month, plan.categoryId), plan);
 }
 
 export async function listExpenses(): Promise<Expense[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const expenseKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(EXPENSE_PREFIX),
   );
   const expenses = await Promise.all(
-    expenseKeys.map((k) => get<Expense>(k, store)),
+    expenseKeys.map((k) => get<Expense>(k)),
   );
   return expenses
     .filter((e): e is Expense => Boolean(e))
@@ -296,11 +295,11 @@ export async function listExpenses(): Promise<Expense[]> {
 }
 
 export async function saveExpense(expense: Expense): Promise<void> {
-  await set(expenseKey(expense.id), expense, store);
+  await set(expenseKey(expense.id), expense);
 }
 
 export async function deleteExpense(id: string): Promise<void> {
-  await del(expenseKey(id), store);
+  await del(expenseKey(id));
 }
 
 const DEFAULT_BUDGET_SETTINGS: BudgetSettings = {
@@ -309,22 +308,22 @@ const DEFAULT_BUDGET_SETTINGS: BudgetSettings = {
 };
 
 export async function getBudgetSettings(): Promise<BudgetSettings> {
-  const settings = await get<BudgetSettings>(BUDGET_SETTINGS_KEY, store);
+  const settings = await get<BudgetSettings>(BUDGET_SETTINGS_KEY);
   return settings ?? DEFAULT_BUDGET_SETTINGS;
 }
 
 export async function saveBudgetSettings(
   settings: BudgetSettings,
 ): Promise<void> {
-  await set(BUDGET_SETTINGS_KEY, settings, store);
+  await set(BUDGET_SETTINGS_KEY, settings);
 }
 
 export async function getExchangeRates(): Promise<ExchangeRates | undefined> {
-  return get<ExchangeRates>(EXCHANGE_RATES_KEY, store);
+  return get<ExchangeRates>(EXCHANGE_RATES_KEY);
 }
 
 export async function saveExchangeRates(rates: ExchangeRates): Promise<void> {
-  await set(EXCHANGE_RATES_KEY, rates, store);
+  await set(EXCHANGE_RATES_KEY, rates);
 }
 
 // ---------------------------------------------------------------------------
@@ -341,11 +340,11 @@ function taskKey(id: string) {
 }
 
 async function readTaskTagsRaw(): Promise<TaskTag[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const tagKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(TASK_TAG_PREFIX),
   );
-  const tags = await Promise.all(tagKeys.map((k) => get<TaskTag>(k, store)));
+  const tags = await Promise.all(tagKeys.map((k) => get<TaskTag>(k)));
   return tags
     .filter((t): t is TaskTag => Boolean(t))
     .sort((a, b) => a.createdAt - b.createdAt);
@@ -359,7 +358,7 @@ async function seedDefaultTaskTags(): Promise<TaskTag[]> {
     usedColors.push(color);
     return { id: crypto.randomUUID(), name, isDefault: true, color, createdAt: now };
   });
-  await Promise.all(defaults.map((t) => set(taskTagKey(t.id), t, store)));
+  await Promise.all(defaults.map((t) => set(taskTagKey(t.id), t)));
   return defaults;
 }
 
@@ -377,7 +376,7 @@ async function backfillTagColors(tags: TaskTag[]): Promise<TaskTag[]> {
     const color = pickNextTagColor(usedColors);
     usedColors.push(color);
     const withColor: TaskTag = { ...tag, color };
-    await set(taskTagKey(tag.id), withColor, store);
+    await set(taskTagKey(tag.id), withColor);
     updated.push(withColor);
   }
   return updated;
@@ -412,7 +411,7 @@ async function dedupeTaskTags(tags: TaskTag[]): Promise<TaskTag[]> {
       await Promise.all(
         affectedTasks.map((t) => saveTask({ ...t, tagId: keeper.id })),
       );
-      await del(taskTagKey(dup.id), store);
+      await del(taskTagKey(dup.id));
     }
   }
 
@@ -439,15 +438,15 @@ export async function listTaskTags(): Promise<TaskTag[]> {
 }
 
 export async function saveTaskTag(tag: TaskTag): Promise<void> {
-  await set(taskTagKey(tag.id), tag, store);
+  await set(taskTagKey(tag.id), tag);
 }
 
 export async function listTasks(): Promise<Task[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const taskKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(TASK_PREFIX),
   );
-  const tasks = await Promise.all(taskKeys.map((k) => get<Task>(k, store)));
+  const tasks = await Promise.all(taskKeys.map((k) => get<Task>(k)));
   return tasks.filter((t): t is Task => Boolean(t));
 }
 
@@ -458,22 +457,21 @@ export async function listTasks(): Promise<Task[]> {
  * d'appel à saveMaterielItem) pour ne jamais boucler entre les deux.
  */
 export async function saveTask(task: Task): Promise<void> {
-  await set(taskKey(task.id), task, store);
+  await set(taskKey(task.id), task);
   if (task.linkedMaterielItemId) {
-    const item = await get<MaterielItem>(materielItemKey(task.linkedMaterielItemId), store);
+    const item = await get<MaterielItem>(materielItemKey(task.linkedMaterielItemId));
     const mappedStatus = TASK_STATUS_TO_ITEM_STATUS[task.status];
     if (item && item.status !== mappedStatus) {
       await set(
         materielItemKey(item.id),
         { ...item, status: mappedStatus, updatedAt: Date.now() },
-        store,
       );
     }
   }
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  await del(taskKey(id), store);
+  await del(taskKey(id));
 }
 
 // ---------------------------------------------------------------------------
@@ -484,12 +482,12 @@ function calendarEventKey(id: string) {
 }
 
 export async function listCalendarEvents(): Promise<CalendarEvent[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const eventKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(CALENDAR_EVENT_PREFIX),
   );
   const events = await Promise.all(
-    eventKeys.map((k) => get<CalendarEvent>(k, store)),
+    eventKeys.map((k) => get<CalendarEvent>(k)),
   );
   return events
     .filter((e): e is CalendarEvent => Boolean(e))
@@ -497,11 +495,11 @@ export async function listCalendarEvents(): Promise<CalendarEvent[]> {
 }
 
 export async function saveCalendarEvent(event: CalendarEvent): Promise<void> {
-  await set(calendarEventKey(event.id), event, store);
+  await set(calendarEventKey(event.id), event);
 }
 
 export async function deleteCalendarEvent(id: string): Promise<void> {
-  await del(calendarEventKey(id), store);
+  await del(calendarEventKey(id));
 }
 
 // ---------------------------------------------------------------------------
@@ -528,60 +526,60 @@ function borderRequirementKey(country: string) {
 }
 
 export async function listLokiDocuments(): Promise<LokiDocument[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const docKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(LOKI_DOCUMENT_PREFIX),
   );
-  const docs = await Promise.all(docKeys.map((k) => get<LokiDocument>(k, store)));
+  const docs = await Promise.all(docKeys.map((k) => get<LokiDocument>(k)));
   return docs
     .filter((d): d is LokiDocument => Boolean(d))
     .sort((a, b) => (a.dueDate ?? a.date ?? "").localeCompare(b.dueDate ?? b.date ?? ""));
 }
 
 export async function saveLokiDocument(doc: LokiDocument): Promise<void> {
-  await set(lokiDocumentKey(doc.id), doc, store);
+  await set(lokiDocumentKey(doc.id), doc);
 }
 
 export async function deleteLokiDocument(id: string): Promise<void> {
-  await del(lokiDocumentKey(id), store);
+  await del(lokiDocumentKey(id));
 }
 
 export async function listWeightEntries(): Promise<WeightEntry[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const entryKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(WEIGHT_ENTRY_PREFIX),
   );
-  const entries = await Promise.all(entryKeys.map((k) => get<WeightEntry>(k, store)));
+  const entries = await Promise.all(entryKeys.map((k) => get<WeightEntry>(k)));
   return entries
     .filter((e): e is WeightEntry => Boolean(e))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function saveWeightEntry(entry: WeightEntry): Promise<void> {
-  await set(weightEntryKey(entry.id), entry, store);
+  await set(weightEntryKey(entry.id), entry);
 }
 
 export async function deleteWeightEntry(id: string): Promise<void> {
-  await del(weightEntryKey(id), store);
+  await del(weightEntryKey(id));
 }
 
 export async function listTreatments(): Promise<Treatment[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const treatmentKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(TREATMENT_PREFIX),
   );
-  const treatments = await Promise.all(treatmentKeys.map((k) => get<Treatment>(k, store)));
+  const treatments = await Promise.all(treatmentKeys.map((k) => get<Treatment>(k)));
   return treatments
     .filter((t): t is Treatment => Boolean(t))
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export async function saveTreatment(treatment: Treatment): Promise<void> {
-  await set(treatmentKey(treatment.id), treatment, store);
+  await set(treatmentKey(treatment.id), treatment);
 }
 
 export async function deleteTreatment(id: string): Promise<void> {
-  await del(treatmentKey(id), store);
+  await del(treatmentKey(id));
 }
 
 function defaultVetId(country: string) {
@@ -597,11 +595,11 @@ function defaultVetId(country: string) {
  * quelles — cette fonction ne supprime jamais rien.
  */
 export async function listVetContacts(desiredCountries: string[]): Promise<VetContact[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const vetKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(VET_CONTACT_PREFIX),
   );
-  const existing = await Promise.all(vetKeys.map((k) => get<VetContact>(k, store)));
+  const existing = await Promise.all(vetKeys.map((k) => get<VetContact>(k)));
   let list = existing.filter((v): v is VetContact => Boolean(v));
 
   const prefilledCountries = new Set(list.filter((v) => v.prefilled).map((v) => v.country));
@@ -615,7 +613,7 @@ export async function listVetContacts(desiredCountries: string[]): Promise<VetCo
       createdAt: now,
       updatedAt: now,
     }));
-    await Promise.all(toCreate.map((v) => set(vetContactKey(v.id), v, store)));
+    await Promise.all(toCreate.map((v) => set(vetContactKey(v.id), v)));
     list = [...list, ...toCreate];
   }
 
@@ -625,11 +623,11 @@ export async function listVetContacts(desiredCountries: string[]): Promise<VetCo
 }
 
 export async function saveVetContact(contact: VetContact): Promise<void> {
-  await set(vetContactKey(contact.id), contact, store);
+  await set(vetContactKey(contact.id), contact);
 }
 
 export async function deleteVetContact(id: string): Promise<void> {
-  await del(vetContactKey(id), store);
+  await del(vetContactKey(id));
 }
 
 /**
@@ -642,11 +640,11 @@ export async function deleteVetContact(id: string): Promise<void> {
 export async function listBorderRequirements(
   desiredCountries: string[],
 ): Promise<BorderRequirement[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const reqKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(BORDER_REQUIREMENT_PREFIX),
   );
-  const existing = await Promise.all(reqKeys.map((k) => get<BorderRequirement>(k, store)));
+  const existing = await Promise.all(reqKeys.map((k) => get<BorderRequirement>(k)));
   let list = existing.filter((r): r is BorderRequirement => Boolean(r));
 
   const existingCountries = new Set(list.map((r) => r.country));
@@ -663,7 +661,7 @@ export async function listBorderRequirements(
       })),
       updatedAt: now,
     }));
-    await Promise.all(toCreate.map((r) => set(borderRequirementKey(r.id), r, store)));
+    await Promise.all(toCreate.map((r) => set(borderRequirementKey(r.id), r)));
     list = [...list, ...toCreate];
   }
 
@@ -671,7 +669,7 @@ export async function listBorderRequirements(
 }
 
 export async function saveBorderRequirement(req: BorderRequirement): Promise<void> {
-  await set(borderRequirementKey(req.id), req, store);
+  await set(borderRequirementKey(req.id), req);
 }
 
 const DEFAULT_LOKI_COUNTRY_SETTINGS: LokiCountrySettings = {
@@ -680,12 +678,12 @@ const DEFAULT_LOKI_COUNTRY_SETTINGS: LokiCountrySettings = {
 };
 
 export async function getLokiCountrySettings(): Promise<LokiCountrySettings> {
-  const settings = await get<LokiCountrySettings>(LOKI_COUNTRY_SETTINGS_KEY, store);
+  const settings = await get<LokiCountrySettings>(LOKI_COUNTRY_SETTINGS_KEY);
   return settings ?? DEFAULT_LOKI_COUNTRY_SETTINGS;
 }
 
 export async function saveLokiCountrySettings(settings: LokiCountrySettings): Promise<void> {
-  await set(LOKI_COUNTRY_SETTINGS_KEY, settings, store);
+  await set(LOKI_COUNTRY_SETTINGS_KEY, settings);
 }
 
 // ---------------------------------------------------------------------------
@@ -705,12 +703,12 @@ function materielCategoryKey(id: string) {
 }
 
 async function readMaterielCategoriesRaw(): Promise<MaterielCategory[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const categoryKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(MATERIEL_CATEGORY_PREFIX),
   );
   const categories = await Promise.all(
-    categoryKeys.map((k) => get<MaterielCategory>(k, store)),
+    categoryKeys.map((k) => get<MaterielCategory>(k)),
   );
   return categories
     .filter((c): c is MaterielCategory => Boolean(c))
@@ -725,7 +723,7 @@ async function seedDefaultMaterielCategories(): Promise<MaterielCategory[]> {
     usedColors.push(color);
     return { id: crypto.randomUUID(), name, isDefault: true, color, createdAt: now };
   });
-  await Promise.all(defaults.map((c) => set(materielCategoryKey(c.id), c, store)));
+  await Promise.all(defaults.map((c) => set(materielCategoryKey(c.id), c)));
   return defaults;
 }
 
@@ -753,7 +751,7 @@ async function dedupeMaterielCategories(categories: MaterielCategory[]): Promise
       await Promise.all(
         affectedItems.map((i) => saveMaterielItem({ ...i, categoryId: keeper.id })),
       );
-      await del(materielCategoryKey(dup.id), store);
+      await del(materielCategoryKey(dup.id));
     }
   }
 
@@ -776,7 +774,7 @@ async function backfillMaterielCategoryColors(
     const color = pickNextTagColor(usedColors);
     usedColors.push(color);
     const withColor: MaterielCategory = { ...category, color };
-    await set(materielCategoryKey(category.id), withColor, store);
+    await set(materielCategoryKey(category.id), withColor);
     updated.push(withColor);
   }
   return updated;
@@ -802,15 +800,15 @@ export async function listMaterielCategories(): Promise<MaterielCategory[]> {
 }
 
 export async function saveMaterielCategory(category: MaterielCategory): Promise<void> {
-  await set(materielCategoryKey(category.id), category, store);
+  await set(materielCategoryKey(category.id), category);
 }
 
 export async function listMaterielItems(): Promise<MaterielItem[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const itemKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(MATERIEL_ITEM_PREFIX),
   );
-  const items = await Promise.all(itemKeys.map((k) => get<MaterielItem>(k, store)));
+  const items = await Promise.all(itemKeys.map((k) => get<MaterielItem>(k)));
   return items
     .filter((i): i is MaterielItem => Boolean(i))
     .sort((a, b) => a.createdAt - b.createdAt);
@@ -828,7 +826,7 @@ async function findTaskLinkedToItem(itemId: string): Promise<Task | undefined> {
  * entre les deux — voir le commentaire "Module Matériel" dans types.ts.
  */
 export async function saveMaterielItem(item: MaterielItem): Promise<void> {
-  await set(materielItemKey(item.id), item, store);
+  await set(materielItemKey(item.id), item);
   const linkedTask = await findTaskLinkedToItem(item.id);
   if (linkedTask) {
     const mappedStatus = ITEM_STATUS_TO_TASK_STATUS[item.status];
@@ -836,7 +834,6 @@ export async function saveMaterielItem(item: MaterielItem): Promise<void> {
       await set(
         taskKey(linkedTask.id),
         { ...linkedTask, status: mappedStatus, updatedAt: Date.now() },
-        store,
       );
     }
   }
@@ -844,11 +841,11 @@ export async function saveMaterielItem(item: MaterielItem): Promise<void> {
 
 /** Supprime un item et détache la tâche qui lui était éventuellement liée (jamais la tâche elle-même). */
 export async function deleteMaterielItem(id: string): Promise<void> {
-  await del(materielItemKey(id), store);
+  await del(materielItemKey(id));
   const linkedTask = await findTaskLinkedToItem(id);
   if (linkedTask) {
     const { linkedMaterielItemId, ...rest } = linkedTask;
-    await set(taskKey(linkedTask.id), { ...rest, updatedAt: Date.now() }, store);
+    await set(taskKey(linkedTask.id), { ...rest, updatedAt: Date.now() });
   }
 }
 
@@ -864,7 +861,7 @@ const DEFAULT_APP_SETTINGS: AppSettings = {
 
 /** Fusionne avec les valeurs par défaut pour rester tolérant à un futur champ ajouté à AppSettings. */
 export async function getAppSettings(): Promise<AppSettings> {
-  const settings = await get<AppSettings>(APP_SETTINGS_KEY, store);
+  const settings = await get<AppSettings>(APP_SETTINGS_KEY);
   if (!settings) return DEFAULT_APP_SETTINGS;
   return {
     ...DEFAULT_APP_SETTINGS,
@@ -874,7 +871,7 @@ export async function getAppSettings(): Promise<AppSettings> {
 }
 
 export async function saveAppSettings(settings: AppSettings): Promise<void> {
-  await set(APP_SETTINGS_KEY, settings, store);
+  await set(APP_SETTINGS_KEY, settings);
 }
 
 /**
@@ -884,9 +881,9 @@ export async function saveAppSettings(settings: AppSettings): Promise<void> {
  * particulière : chaque module sait déjà lire ses propres clés préfixées.
  */
 export async function exportAllData(): Promise<Record<string, unknown>> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const entries = await Promise.all(
-    allKeys.map(async (k) => [String(k), await get(k, store)] as const),
+    allKeys.map(async (k) => [String(k), await get(k)] as const),
   );
   return Object.fromEntries(entries);
 }
@@ -900,8 +897,8 @@ export async function exportAllData(): Promise<Record<string, unknown>> {
  * déjà en mémoire ailleurs dans l'app resterait sinon périmé).
  */
 export async function importAllData(data: Record<string, unknown>): Promise<void> {
-  await clear(store);
-  await setMany(Object.entries(data), store);
+  await clear();
+  await setMany(Object.entries(data));
 }
 
 // ---------------------------------------------------------------------------
@@ -928,11 +925,11 @@ function maintenanceLogKey(id: string) {
 }
 
 async function readMaintenanceTypesRaw(): Promise<MaintenanceType[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const typeKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(MAINTENANCE_TYPE_PREFIX),
   );
-  const types = await Promise.all(typeKeys.map((k) => get<MaintenanceType>(k, store)));
+  const types = await Promise.all(typeKeys.map((k) => get<MaintenanceType>(k)));
   return types
     .filter((t): t is MaintenanceType => Boolean(t))
     .sort((a, b) => a.createdAt - b.createdAt);
@@ -953,7 +950,7 @@ async function seedDefaultMaintenanceTypes(): Promise<MaintenanceType[]> {
       createdAt: now,
     };
   });
-  await Promise.all(defaults.map((t) => set(maintenanceTypeKey(t.id), t, store)));
+  await Promise.all(defaults.map((t) => set(maintenanceTypeKey(t.id), t)));
   return defaults;
 }
 
@@ -983,7 +980,7 @@ async function dedupeMaintenanceTypes(types: MaintenanceType[]): Promise<Mainten
       await Promise.all(
         affectedTasks.map((t) => saveTask({ ...t, linkedVehicleTypeId: keeper.id })),
       );
-      await del(maintenanceTypeKey(dup.id), store);
+      await del(maintenanceTypeKey(dup.id));
     }
   }
 
@@ -1006,7 +1003,7 @@ async function backfillMaintenanceTypeColors(
     const color = pickNextTagColor(usedColors);
     usedColors.push(color);
     const withColor: MaintenanceType = { ...type, color };
-    await set(maintenanceTypeKey(type.id), withColor, store);
+    await set(maintenanceTypeKey(type.id), withColor);
     updated.push(withColor);
   }
   return updated;
@@ -1032,26 +1029,26 @@ export async function listMaintenanceTypes(): Promise<MaintenanceType[]> {
 }
 
 export async function saveMaintenanceType(type: MaintenanceType): Promise<void> {
-  await set(maintenanceTypeKey(type.id), type, store);
+  await set(maintenanceTypeKey(type.id), type);
 }
 
 export async function listMaintenanceLogs(): Promise<MaintenanceLog[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const logKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(MAINTENANCE_LOG_PREFIX),
   );
-  const logs = await Promise.all(logKeys.map((k) => get<MaintenanceLog>(k, store)));
+  const logs = await Promise.all(logKeys.map((k) => get<MaintenanceLog>(k)));
   return logs
     .filter((l): l is MaintenanceLog => Boolean(l))
     .sort((a, b) => b.km - a.km);
 }
 
 export async function saveMaintenanceLog(log: MaintenanceLog): Promise<void> {
-  await set(maintenanceLogKey(log.id), log, store);
+  await set(maintenanceLogKey(log.id), log);
 }
 
 export async function deleteMaintenanceLog(id: string): Promise<void> {
-  await del(maintenanceLogKey(id), store);
+  await del(maintenanceLogKey(id));
 }
 
 const DEFAULT_VEHICLE_SETTINGS: VehicleSettings = {
@@ -1059,12 +1056,12 @@ const DEFAULT_VEHICLE_SETTINGS: VehicleSettings = {
 };
 
 export async function getVehicleSettings(): Promise<VehicleSettings> {
-  const settings = await get<VehicleSettings>(VEHICLE_SETTINGS_KEY, store);
+  const settings = await get<VehicleSettings>(VEHICLE_SETTINGS_KEY);
   return settings ?? DEFAULT_VEHICLE_SETTINGS;
 }
 
 export async function saveVehicleSettings(settings: VehicleSettings): Promise<void> {
-  await set(VEHICLE_SETTINGS_KEY, settings, store);
+  await set(VEHICLE_SETTINGS_KEY, settings);
 }
 
 // ---------------------------------------------------------------------------
@@ -1077,20 +1074,20 @@ function adminDocumentKey(id: string) {
 }
 
 export async function listAdminDocuments(): Promise<AdminDocument[]> {
-  const allKeys = await keys(store);
+  const allKeys = await keys();
   const docKeys = allKeys.filter(
     (k): k is string => typeof k === "string" && k.startsWith(ADMIN_DOCUMENT_PREFIX),
   );
-  const docs = await Promise.all(docKeys.map((k) => get<AdminDocument>(k, store)));
+  const docs = await Promise.all(docKeys.map((k) => get<AdminDocument>(k)));
   return docs
     .filter((d): d is AdminDocument => Boolean(d))
     .sort((a, b) => (a.expiryDate ?? "").localeCompare(b.expiryDate ?? ""));
 }
 
 export async function saveAdminDocument(doc: AdminDocument): Promise<void> {
-  await set(adminDocumentKey(doc.id), doc, store);
+  await set(adminDocumentKey(doc.id), doc);
 }
 
 export async function deleteAdminDocument(id: string): Promise<void> {
-  await del(adminDocumentKey(id), store);
+  await del(adminDocumentKey(id));
 }
