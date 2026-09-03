@@ -17,6 +17,8 @@ import type {
   LokiCountrySettings,
   LokiDocument,
   MapSettings,
+  MaintenanceLog,
+  MaintenanceType,
   MaterielCategory,
   MaterielItem,
   RouteSegment,
@@ -24,6 +26,7 @@ import type {
   Task,
   TaskTag,
   Treatment,
+  VehicleSettings,
   VetContact,
   WeightEntry,
 } from "./types";
@@ -898,4 +901,167 @@ export async function exportAllData(): Promise<Record<string, unknown>> {
 export async function importAllData(data: Record<string, unknown>): Promise<void> {
   await clear(store);
   await setMany(Object.entries(data), store);
+}
+
+// ---------------------------------------------------------------------------
+// Module Véhicule
+
+const DEFAULT_MAINTENANCE_TYPES: Array<{ name: string; intervalKm?: number }> = [
+  { name: "Vidange", intervalKm: 10000 },
+  { name: "Pneus", intervalKm: 20000 },
+  { name: "Révision", intervalKm: 20000 },
+  { name: "Freins", intervalKm: 30000 },
+  { name: "Autre" },
+];
+
+const MAINTENANCE_TYPE_PREFIX = "maintenance-type:";
+const MAINTENANCE_LOG_PREFIX = "maintenance-log:";
+const VEHICLE_SETTINGS_KEY = "vehicle-settings";
+
+function maintenanceTypeKey(id: string) {
+  return `${MAINTENANCE_TYPE_PREFIX}${id}`;
+}
+
+function maintenanceLogKey(id: string) {
+  return `${MAINTENANCE_LOG_PREFIX}${id}`;
+}
+
+async function readMaintenanceTypesRaw(): Promise<MaintenanceType[]> {
+  const allKeys = await keys(store);
+  const typeKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(MAINTENANCE_TYPE_PREFIX),
+  );
+  const types = await Promise.all(typeKeys.map((k) => get<MaintenanceType>(k, store)));
+  return types
+    .filter((t): t is MaintenanceType => Boolean(t))
+    .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+async function seedDefaultMaintenanceTypes(): Promise<MaintenanceType[]> {
+  const now = Date.now();
+  const usedColors: Array<string | undefined> = [];
+  const defaults: MaintenanceType[] = DEFAULT_MAINTENANCE_TYPES.map(({ name, intervalKm }) => {
+    const color = pickNextTagColor(usedColors);
+    usedColors.push(color);
+    return {
+      id: crypto.randomUUID(),
+      name,
+      isDefault: true,
+      color,
+      intervalKm,
+      createdAt: now,
+    };
+  });
+  await Promise.all(defaults.map((t) => set(maintenanceTypeKey(t.id), t, store)));
+  return defaults;
+}
+
+/** Même correctif anti-doublon que pour les catégories Budget/Matériel et les tags de tâches (cf. dedupeCategories). */
+async function dedupeMaintenanceTypes(types: MaintenanceType[]): Promise<MaintenanceType[]> {
+  const groups = new Map<string, MaintenanceType[]>();
+  for (const t of types) {
+    const key = t.name.trim().toLowerCase();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(t);
+  }
+
+  const duplicateGroups = Array.from(groups.values()).filter((g) => g.length > 1);
+  if (duplicateGroups.length === 0) return types;
+
+  const [logs, tasks] = await Promise.all([listMaintenanceLogs(), listTasks()]);
+
+  for (const group of duplicateGroups) {
+    const [keeper, ...duplicates] = [...group].sort((a, b) => a.createdAt - b.createdAt);
+
+    for (const dup of duplicates) {
+      const affectedLogs = logs.filter((l) => l.typeId === dup.id);
+      await Promise.all(
+        affectedLogs.map((l) => saveMaintenanceLog({ ...l, typeId: keeper.id })),
+      );
+      const affectedTasks = tasks.filter((t) => t.linkedVehicleTypeId === dup.id);
+      await Promise.all(
+        affectedTasks.map((t) => saveTask({ ...t, linkedVehicleTypeId: keeper.id })),
+      );
+      await del(maintenanceTypeKey(dup.id), store);
+    }
+  }
+
+  return readMaintenanceTypesRaw();
+}
+
+/** Attribue une couleur pastel aux types qui n'en ont pas encore (données antérieures à cette fonctionnalité). */
+async function backfillMaintenanceTypeColors(
+  types: MaintenanceType[],
+): Promise<MaintenanceType[]> {
+  if (types.every((t) => t.color)) return types;
+
+  const usedColors = types.map((t) => t.color);
+  const updated: MaintenanceType[] = [];
+  for (const type of types) {
+    if (type.color) {
+      updated.push(type);
+      continue;
+    }
+    const color = pickNextTagColor(usedColors);
+    usedColors.push(color);
+    const withColor: MaintenanceType = { ...type, color };
+    await set(maintenanceTypeKey(type.id), withColor, store);
+    updated.push(withColor);
+  }
+  return updated;
+}
+
+// Empêche deux appels concurrents (ex. double montage d'effet en React
+// StrictMode) de semer chacun leur propre jeu de types par défaut.
+let maintenanceTypesSeedPromise: Promise<MaintenanceType[]> | null = null;
+
+/** Liste les types d'entretien, en créant les types par défaut au premier appel. */
+export async function listMaintenanceTypes(): Promise<MaintenanceType[]> {
+  const existing = await readMaintenanceTypesRaw();
+
+  if (existing.length === 0) {
+    if (!maintenanceTypesSeedPromise) {
+      maintenanceTypesSeedPromise = seedDefaultMaintenanceTypes();
+    }
+    return maintenanceTypesSeedPromise;
+  }
+
+  const deduped = await dedupeMaintenanceTypes(existing);
+  return backfillMaintenanceTypeColors(deduped);
+}
+
+export async function saveMaintenanceType(type: MaintenanceType): Promise<void> {
+  await set(maintenanceTypeKey(type.id), type, store);
+}
+
+export async function listMaintenanceLogs(): Promise<MaintenanceLog[]> {
+  const allKeys = await keys(store);
+  const logKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(MAINTENANCE_LOG_PREFIX),
+  );
+  const logs = await Promise.all(logKeys.map((k) => get<MaintenanceLog>(k, store)));
+  return logs
+    .filter((l): l is MaintenanceLog => Boolean(l))
+    .sort((a, b) => b.km - a.km);
+}
+
+export async function saveMaintenanceLog(log: MaintenanceLog): Promise<void> {
+  await set(maintenanceLogKey(log.id), log, store);
+}
+
+export async function deleteMaintenanceLog(id: string): Promise<void> {
+  await del(maintenanceLogKey(id), store);
+}
+
+const DEFAULT_VEHICLE_SETTINGS: VehicleSettings = {
+  startingOdometerKm: 0,
+};
+
+export async function getVehicleSettings(): Promise<VehicleSettings> {
+  const settings = await get<VehicleSettings>(VEHICLE_SETTINGS_KEY, store);
+  return settings ?? DEFAULT_VEHICLE_SETTINGS;
+}
+
+export async function saveVehicleSettings(settings: VehicleSettings): Promise<void> {
+  await set(VEHICLE_SETTINGS_KEY, settings, store);
 }

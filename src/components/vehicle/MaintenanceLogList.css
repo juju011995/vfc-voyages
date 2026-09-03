@@ -1,0 +1,75 @@
+.maintenance-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.maintenance-log-list__empty {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  padding: 16px 0;
+}
+
+.maintenance-log-list__row {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.maintenance-log-list__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+.maintenance-log-list__date {
+  flex: 0 0 auto;
+  width: 74px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-transform: capitalize;
+}
+
+.maintenance-log-list__info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.maintenance-log-list__type {
+  align-self: flex-start;
+  border-radius: var(--radius-pill);
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--color-bg);
+}
+
+.maintenance-log-list__note {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.maintenance-log-list__km {
+  flex: 0 0 auto;
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+}

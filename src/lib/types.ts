@@ -128,6 +128,10 @@ export interface ExchangeRates {
 // - Matériel : Task.linkedMaterielItemId lie une tâche à un item du module
 //   Matériel ; leurs statuts sont synchronisés dans les deux sens par
 //   saveTask/saveMaterielItem (src/lib/db.ts).
+// - Véhicule : Task.linkedVehicleTypeId lie une tâche à un type d'entretien
+//   du module Véhicule — lien informatif seulement (pas de statut à
+//   synchroniser, un type d'entretien n'a pas de statut propre), édité
+//   depuis le module Véhicule.
 // - Calendrier : lira les échéances via listUpcomingDeadlines(tasks)
 //   (src/lib/taskCalc.ts) plutôt que de dupliquer la saisie.
 
@@ -158,6 +162,8 @@ export interface Task {
   status: TaskStatus;
   /** Lien vers un item du module Matériel — voir le commentaire ci-dessus. */
   linkedMaterielItemId?: string;
+  /** Lien vers un type d'entretien du module Véhicule — voir le commentaire ci-dessus. */
+  linkedVehicleTypeId?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -335,4 +341,44 @@ export interface AppSettings {
   /** Devise présélectionnée pour une nouvelle dépense (module Budget) — les montants restent agrégés en euros. */
   defaultCurrency: string;
   profileNames: ProfileNames;
+}
+
+// ---------------------------------------------------------------------------
+// Module Véhicule
+//
+// Le kilométrage réel du véhicule (nécessaire pour calculer une échéance
+// d'entretien) n'est pas le même que les km parcourus depuis le début du
+// voyage (module Carte/Statistiques) : le Hilux n'était pas à 0 km au
+// départ. VehicleSettings.startingOdometerKm comble cet écart — laissé à 0
+// si non renseigné, le kilométrage actuel revient alors exactement aux km
+// parcourus depuis le début du voyage (voir computeCurrentOdometerKm dans
+// vehicleCalc.ts).
+
+export interface MaintenanceType {
+  id: string;
+  name: string;
+  /** Types fournis par défaut — non supprimables, seulement renommables. */
+  isDefault: boolean;
+  archived?: boolean;
+  /** Couleur pastel (hex) — même système que les tags de tâches. */
+  color?: string;
+  /** Intervalle habituel en km entre deux interventions de ce type — optionnel, aucune échéance calculée si absent. */
+  intervalKm?: number;
+  createdAt: number;
+}
+
+export interface MaintenanceLog {
+  id: string;
+  typeId: string;
+  /** Date de l'intervention, format ISO (YYYY-MM-DD). */
+  date: string;
+  /** Kilométrage réel du véhicule (odomètre) à l'intervention. */
+  km: number;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface VehicleSettings {
+  startingOdometerKm: number;
 }

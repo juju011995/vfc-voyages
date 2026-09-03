@@ -11,6 +11,9 @@ import {
   listLokiDocuments,
   listTreatments,
   listMaterielItems,
+  listMaintenanceTypes,
+  listMaintenanceLogs,
+  getVehicleSettings,
 } from "../lib/db";
 import type {
   BudgetPlan,
@@ -18,6 +21,8 @@ import type {
   CalendarEvent,
   Expense,
   LokiDocument,
+  MaintenanceLog,
+  MaintenanceType,
   MaterielItem,
   RouteSegment,
   Stop,
@@ -29,6 +34,7 @@ import { buildAgenda, getUpcomingAgenda } from "../lib/calendarCalc";
 import { getUpcomingLokiDeadlines } from "../lib/lokiCalc";
 import { countMaterielItems, spentPriceEUR, totalPriceEUR } from "../lib/materielCalc";
 import { buildCumulativeBudgetTrend, buildKmByCountry, buildMonthlyBudgetTrend } from "../lib/statsCalc";
+import { buildMaintenanceStatuses, computeCurrentOdometerKm } from "../lib/vehicleCalc";
 import { statusColor } from "../components/map/mapColors";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
@@ -38,6 +44,7 @@ import { TaskSummaryCard } from "../components/tasks/TaskSummaryCard";
 import { UpcomingEventCard } from "../components/calendar/UpcomingEventCard";
 import { LokiSummaryCard } from "../components/loki/LokiSummaryCard";
 import { StatsSummaryCard } from "../components/stats/StatsSummaryCard";
+import { VehicleSummaryCard } from "../components/vehicle/VehicleSummaryCard";
 import "./Dashboard.css";
 
 interface DashboardProps {
@@ -80,6 +87,9 @@ export function Dashboard({
   const [lokiDocuments, setLokiDocuments] = useState<LokiDocument[]>([]);
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [materielItems, setMaterielItems] = useState<MaterielItem[]>([]);
+  const [maintenanceTypes, setMaintenanceTypes] = useState<MaintenanceType[]>([]);
+  const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
+  const [currentOdometerKm, setCurrentOdometerKm] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,6 +137,19 @@ export function Dashboard({
       const items = await listMaterielItems();
       if (!cancelled) setMaterielItems(items);
     })();
+    (async () => {
+      const [types, logs, settings] = await Promise.all([
+        listMaintenanceTypes(),
+        listMaintenanceLogs(),
+        getVehicleSettings(),
+      ]);
+      const odometer = await computeCurrentOdometerKm(settings);
+      if (!cancelled) {
+        setMaintenanceTypes(types);
+        setMaintenanceLogs(logs);
+        setCurrentOdometerKm(odometer);
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -157,6 +180,13 @@ export function Dashboard({
     budgetPlans.length > 0 && lastCumulative
       ? lastCumulative.cumulativeSpentEUR - lastCumulative.cumulativePrevuEUR
       : undefined;
+
+  const maintenanceStatuses = buildMaintenanceStatuses(
+    maintenanceTypes,
+    maintenanceLogs,
+    currentOdometerKm,
+  );
+  const mostUrgentMaintenance = maintenanceStatuses.find((s) => s.remainingKm !== undefined);
 
   return (
     <div className="dashboard">
@@ -298,6 +328,15 @@ export function Dashboard({
           countryCount={kmByCountry.length}
           cumulativeDeltaEUR={cumulativeDeltaEUR}
         />
+      </button>
+
+      <button
+        type="button"
+        className="dashboard__task-card"
+        onClick={onOpenPlus}
+        aria-label="Ouvrir le module Véhicule"
+      >
+        <VehicleSummaryCard mostUrgent={mostUrgentMaintenance} />
       </button>
     </div>
   );

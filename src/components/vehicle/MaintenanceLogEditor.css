@@ -1,0 +1,80 @@
+.maintenance-log-editor {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.maintenance-log-editor__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.maintenance-log-editor__header h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 16px;
+}
+
+.maintenance-log-editor__close {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-border);
+  color: var(--color-text);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.maintenance-log-editor__row {
+  display: flex;
+  gap: 10px;
+}
+
+.maintenance-log-editor__row .maintenance-log-editor__field {
+  flex: 1;
+}
+
+.maintenance-log-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.maintenance-log-editor__field input,
+.maintenance-log-editor__field select,
+.maintenance-log-editor__field textarea {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.maintenance-log-editor__field input:focus,
+.maintenance-log-editor__field select:focus,
+.maintenance-log-editor__field textarea:focus {
+  outline: 2px solid var(--color-action);
+  outline-offset: 1px;
+}
+
+.maintenance-log-editor__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
