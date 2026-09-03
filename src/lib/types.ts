@@ -382,3 +382,26 @@ export interface MaintenanceLog {
 export interface VehicleSettings {
   startingOdometerKm: number;
 }
+
+// ---------------------------------------------------------------------------
+// Module Administratif
+//
+// Même principe que les documents Loki : pas de fichier stocké dans l'outil,
+// seulement un lien vers un Google Drive externe. Les tâches taguées
+// "Administratif" (tag par défaut du module Tâches) ne sont pas dupliquées
+// ici non plus : ce module les lit via getTasksByTagName(tasks, tags,
+// "Administratif"), exactement comme le module Loki le fait pour son tag.
+
+export interface AdminDocument {
+  id: string;
+  title: string;
+  /** Personne concernée — mêmes valeurs/couleurs que Payer partout ailleurs dans l'app. */
+  person: Payer;
+  /** Date d'expiration, format ISO (YYYY-MM-DD). */
+  expiryDate?: string;
+  notes?: string;
+  /** Lien vers le document scanné, stocké sur un Google Drive externe — pas de fichier dans l'outil. */
+  driveLink?: string;
+  createdAt: number;
+  updatedAt: number;
+}

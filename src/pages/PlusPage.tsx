@@ -3,10 +3,18 @@ import { CalendarPage } from "./CalendarPage";
 import { LokiPage } from "./LokiPage";
 import { MaterielPage } from "./MaterielPage";
 import { VehiclePage } from "./VehiclePage";
+import { AdministratifPage } from "./AdministratifPage";
 import { SettingsPage } from "./SettingsPage";
 import "./PlusPage.css";
 
-type PlusSubPage = "menu" | "calendrier" | "loki" | "materiel" | "vehicule" | "parametres";
+type PlusSubPage =
+  | "menu"
+  | "calendrier"
+  | "loki"
+  | "materiel"
+  | "vehicule"
+  | "administratif"
+  | "parametres";
 
 interface PlusPageProps {
   onOpenTaches: () => void;
@@ -29,6 +37,7 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         {subPage === "loki" && <LokiPage onOpenTaches={onOpenTaches} />}
         {subPage === "materiel" && <MaterielPage />}
         {subPage === "vehicule" && <VehiclePage />}
+        {subPage === "administratif" && <AdministratifPage onOpenTaches={onOpenTaches} />}
         {subPage === "parametres" && <SettingsPage />}
       </div>
     );
@@ -69,6 +78,15 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         onClick={() => setSubPage("vehicule")}
       >
         <span>Véhicule</span>
+        <span className="plus-page__menu-item-arrow">→</span>
+      </button>
+
+      <button
+        type="button"
+        className="plus-page__menu-item"
+        onClick={() => setSubPage("administratif")}
+      >
+        <span>Administratif</span>
         <span className="plus-page__menu-item-arrow">→</span>
       </button>
 

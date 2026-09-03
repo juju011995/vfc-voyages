@@ -5,6 +5,7 @@
 
 import { createStore, get, set, setMany, del, keys, clear } from "idb-keyval";
 import type {
+  AdminDocument,
   AppSettings,
   BorderRequirement,
   BudgetPlan,
@@ -1064,4 +1065,32 @@ export async function getVehicleSettings(): Promise<VehicleSettings> {
 
 export async function saveVehicleSettings(settings: VehicleSettings): Promise<void> {
   await set(VEHICLE_SETTINGS_KEY, settings, store);
+}
+
+// ---------------------------------------------------------------------------
+// Module Administratif
+
+const ADMIN_DOCUMENT_PREFIX = "admin-document:";
+
+function adminDocumentKey(id: string) {
+  return `${ADMIN_DOCUMENT_PREFIX}${id}`;
+}
+
+export async function listAdminDocuments(): Promise<AdminDocument[]> {
+  const allKeys = await keys(store);
+  const docKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(ADMIN_DOCUMENT_PREFIX),
+  );
+  const docs = await Promise.all(docKeys.map((k) => get<AdminDocument>(k, store)));
+  return docs
+    .filter((d): d is AdminDocument => Boolean(d))
+    .sort((a, b) => (a.expiryDate ?? "").localeCompare(b.expiryDate ?? ""));
+}
+
+export async function saveAdminDocument(doc: AdminDocument): Promise<void> {
+  await set(adminDocumentKey(doc.id), doc, store);
+}
+
+export async function deleteAdminDocument(id: string): Promise<void> {
+  await del(adminDocumentKey(id), store);
 }

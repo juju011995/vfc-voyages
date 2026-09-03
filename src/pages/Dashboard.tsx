@@ -14,8 +14,10 @@ import {
   listMaintenanceTypes,
   listMaintenanceLogs,
   getVehicleSettings,
+  listAdminDocuments,
 } from "../lib/db";
 import type {
+  AdminDocument,
   BudgetPlan,
   BudgetSettings,
   CalendarEvent,
@@ -32,6 +34,7 @@ import type {
 import { countTasks } from "../lib/taskCalc";
 import { buildAgenda, getUpcomingAgenda } from "../lib/calendarCalc";
 import { getUpcomingLokiDeadlines } from "../lib/lokiCalc";
+import { getUpcomingAdminDeadlines } from "../lib/adminCalc";
 import { countMaterielItems, spentPriceEUR, totalPriceEUR } from "../lib/materielCalc";
 import { buildCumulativeBudgetTrend, buildKmByCountry, buildMonthlyBudgetTrend } from "../lib/statsCalc";
 import { buildMaintenanceStatuses, computeCurrentOdometerKm } from "../lib/vehicleCalc";
@@ -45,6 +48,7 @@ import { UpcomingEventCard } from "../components/calendar/UpcomingEventCard";
 import { LokiSummaryCard } from "../components/loki/LokiSummaryCard";
 import { StatsSummaryCard } from "../components/stats/StatsSummaryCard";
 import { VehicleSummaryCard } from "../components/vehicle/VehicleSummaryCard";
+import { AdminSummaryCard } from "../components/administratif/AdminSummaryCard";
 import "./Dashboard.css";
 
 interface DashboardProps {
@@ -90,6 +94,7 @@ export function Dashboard({
   const [maintenanceTypes, setMaintenanceTypes] = useState<MaintenanceType[]>([]);
   const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
   const [currentOdometerKm, setCurrentOdometerKm] = useState(0);
+  const [adminDocuments, setAdminDocuments] = useState<AdminDocument[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,6 +155,10 @@ export function Dashboard({
         setCurrentOdometerKm(odometer);
       }
     })();
+    (async () => {
+      const docs = await listAdminDocuments();
+      if (!cancelled) setAdminDocuments(docs);
+    })();
     return () => {
       cancelled = true;
     };
@@ -158,6 +167,7 @@ export function Dashboard({
   const taskCounts = countTasks(tasks);
   const nextAgendaItem = getUpcomingAgenda(buildAgenda(calendarEvents, tasks), 1)[0];
   const nextLokiDeadline = getUpcomingLokiDeadlines(lokiDocuments, treatments, 1)[0];
+  const nextAdminDeadline = getUpcomingAdminDeadlines(adminDocuments, 1)[0];
 
   const visited = stops.filter((s) => s.status === "visite").length;
   const totalKm = segments.reduce((sum, s) => sum + s.distanceMeters, 0) / 1000;
@@ -337,6 +347,15 @@ export function Dashboard({
         aria-label="Ouvrir le module Véhicule"
       >
         <VehicleSummaryCard mostUrgent={mostUrgentMaintenance} />
+      </button>
+
+      <button
+        type="button"
+        className="dashboard__task-card"
+        onClick={onOpenPlus}
+        aria-label="Ouvrir le module Administratif"
+      >
+        <AdminSummaryCard deadline={nextAdminDeadline} palette={palette} />
       </button>
     </div>
   );
