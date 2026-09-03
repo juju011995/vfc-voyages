@@ -1,0 +1,83 @@
+.budget-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+  padding-bottom: 24px;
+}
+
+.budget-page__loading {
+  padding-top: 40px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.budget-page__toolbar {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.budget-page__toolbar button {
+  flex: 1;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 10px 8px;
+  cursor: pointer;
+}
+
+.budget-page__toolbar button.is-active {
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+}
+
+.budget-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.budget-page__trip-budget-toggle {
+  background: none;
+  border: none;
+  color: var(--color-action);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.budget-page__trip-budget-edit {
+  display: flex;
+  gap: 8px;
+}
+
+.budget-page__trip-budget-edit input {
+  flex: 1 1 auto;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.budget-page__expenses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.budget-page__recap-title {
+  margin: 4px 0 -4px;
+  font-family: var(--font-heading);
+  font-size: 15px;
+}

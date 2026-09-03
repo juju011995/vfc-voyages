@@ -1,0 +1,95 @@
+.loki-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+  padding-bottom: 24px;
+}
+
+.loki-page__loading {
+  padding-top: 40px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.loki-page__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 18px;
+}
+
+.loki-page__toolbar {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.loki-page__toolbar button {
+  flex: 1;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 10px 6px;
+  cursor: pointer;
+}
+
+.loki-page__toolbar button.is-active {
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+}
+
+.loki-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.loki-page__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.loki-page__section-header h3,
+.loki-page__section-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 14.5px;
+}
+
+.loki-page__section-title {
+  margin-top: 6px;
+}
+
+.loki-page__hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.loki-page__editor-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  padding: 10px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 860px) {
+  .loki-page__editor-overlay {
+    position: static;
+    max-width: 420px;
+    max-height: none;
+    padding: 0;
+  }
+}

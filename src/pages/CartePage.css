@@ -1,0 +1,122 @@
+.carte-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding-top: 8px;
+}
+
+.carte-page__toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.carte-page__mode-toggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.carte-page__mode-toggle button {
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.carte-page__mode-toggle button.is-active {
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+}
+
+.carte-page__gpx-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.carte-page__gpx-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.carte-page__notice {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+.carte-page__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.carte-page__sidebar {
+  flex: 0 0 auto;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.carte-page__map {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 280px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.carte-page__editor {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  padding: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 860px) {
+  .carte-page__body {
+    flex-direction: row;
+  }
+
+  .carte-page__sidebar {
+    max-height: none;
+    width: 280px;
+    flex: 0 0 280px;
+    overflow-y: auto;
+  }
+
+  .carte-page__map {
+    min-height: 0;
+  }
+
+  .carte-page__editor {
+    position: static;
+    width: 300px;
+    flex: 0 0 300px;
+    max-height: none;
+    padding: 0;
+  }
+}

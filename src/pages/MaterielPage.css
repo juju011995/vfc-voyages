@@ -1,0 +1,68 @@
+.materiel-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+  padding-bottom: 24px;
+}
+
+.materiel-page__loading {
+  padding-top: 40px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.materiel-page__status-filter {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.materiel-page__status-filter button {
+  flex: 1;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 10px 6px;
+  cursor: pointer;
+}
+
+.materiel-page__status-filter button.is-active {
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+}
+
+.materiel-page__categories-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--color-action);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.materiel-page__editor-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  padding: 10px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 860px) {
+  .materiel-page__editor-overlay {
+    position: static;
+    max-width: 420px;
+    max-height: none;
+    padding: 0;
+  }
+}

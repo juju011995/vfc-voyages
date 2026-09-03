@@ -1,0 +1,120 @@
+.event-editor {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.event-editor__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.event-editor__title-input {
+  flex: 1 1 auto;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 0;
+}
+
+.event-editor__title-input:focus {
+  outline: none;
+  border-color: var(--color-action);
+}
+
+.event-editor__close {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-border);
+  color: var(--color-text);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.event-editor__row {
+  display: flex;
+  gap: 10px;
+}
+
+.event-editor__row .event-editor__field {
+  flex: 1;
+}
+
+.event-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.event-editor__field input,
+.event-editor__field select,
+.event-editor__field textarea {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.event-editor__field input:focus,
+.event-editor__field select:focus,
+.event-editor__field textarea:focus {
+  outline: 2px solid var(--color-action);
+  outline-offset: 1px;
+}
+
+.event-editor__toggle {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.event-editor__toggle button {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.event-editor__toggle button.is-active {
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+  border-color: var(--color-action);
+}
+
+.event-editor__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}

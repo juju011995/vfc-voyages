@@ -1,0 +1,85 @@
+.materiel-summary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 14px;
+}
+
+.materiel-summary__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-action);
+}
+
+.materiel-summary__total {
+  font-family: var(--font-heading);
+}
+
+.materiel-summary__amount {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.materiel-summary__target {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 700;
+}
+
+.materiel-summary__bar {
+  margin-top: 10px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.materiel-summary__bar-fill {
+  height: 100%;
+  background: var(--color-action);
+  border-radius: var(--radius-pill);
+}
+
+.materiel-summary__percent {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+.materiel-summary__counts {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+}
+
+.materiel-summary--compact {
+  padding: 14px;
+}
+
+.materiel-summary--compact .materiel-summary__eyebrow {
+  margin-bottom: 4px;
+}
+
+.materiel-summary__compact-line {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.materiel-summary__compact-line strong {
+  font-family: var(--font-heading);
+}
+
+.materiel-summary__compact-sub {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}

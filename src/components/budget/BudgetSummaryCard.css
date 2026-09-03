@@ -1,0 +1,76 @@
+.budget-summary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 18px;
+}
+
+.budget-summary__total {
+  font-family: var(--font-heading);
+}
+
+.budget-summary__amount {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.budget-summary__target {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  font-weight: 700;
+}
+
+.budget-summary__bar {
+  margin-top: 10px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.budget-summary__bar-fill {
+  height: 100%;
+  background: var(--color-action);
+  border-radius: var(--radius-pill);
+}
+
+.budget-summary__bar-fill--over {
+  background: var(--color-alert);
+}
+
+.budget-summary__percent {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+.budget-summary__month {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+}
+
+.budget-summary--compact {
+  padding: 14px;
+}
+
+.budget-summary__compact-line {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.budget-summary__compact-line strong {
+  font-family: var(--font-heading);
+}
+
+.budget-summary__compact-sub {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}

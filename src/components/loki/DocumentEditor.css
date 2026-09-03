@@ -1,0 +1,120 @@
+.document-editor {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.document-editor__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.document-editor__title-input {
+  flex: 1 1 auto;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 0;
+}
+
+.document-editor__title-input:focus {
+  outline: none;
+  border-color: var(--color-action);
+}
+
+.document-editor__close {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-border);
+  color: var(--color-text);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.document-editor__row {
+  display: flex;
+  gap: 10px;
+}
+
+.document-editor__row .document-editor__field {
+  flex: 1;
+}
+
+.document-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.document-editor__field input,
+.document-editor__field select,
+.document-editor__field textarea {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.document-editor__field input:focus,
+.document-editor__field select:focus,
+.document-editor__field textarea:focus {
+  outline: 2px solid var(--color-action);
+  outline-offset: 1px;
+}
+
+.document-editor__toggle {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.document-editor__toggle button {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.document-editor__toggle button.is-active {
+  background: var(--color-action);
+  color: var(--color-action-contrast);
+  border-color: var(--color-action);
+}
+
+.document-editor__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}

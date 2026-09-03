@@ -1,0 +1,75 @@
+.pin-gate {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--color-bg);
+  background-image: var(--bg-texture);
+}
+
+.pin-gate__loading {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg);
+  background-image: var(--bg-texture);
+}
+
+.pin-gate__card {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.pin-gate__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  color: var(--color-text);
+}
+
+.pin-gate__hint {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+}
+
+.pin-gate__input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 20px;
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 10px;
+}
+
+.pin-gate__input:focus {
+  outline: 2px solid var(--color-action);
+  outline-offset: 1px;
+}
+
+.pin-gate__error {
+  margin: -4px 0 0;
+  font-size: 12.5px;
+  color: var(--color-alert);
+}
+
+.pin-gate__card .btn {
+  width: 100%;
+}

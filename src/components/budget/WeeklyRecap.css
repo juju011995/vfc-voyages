@@ -1,0 +1,87 @@
+.weekly-recap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weekly-recap__empty {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  padding: 16px 0;
+}
+
+.weekly-recap__intro {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.weekly-recap__prevu-detail {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.weekly-recap__week {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.weekly-recap__week-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.weekly-recap__week-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-family: var(--font-heading);
+  text-transform: capitalize;
+}
+
+.weekly-recap__week-total {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.weekly-recap__week-total--over {
+  color: var(--color-alert);
+}
+
+.weekly-recap__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.weekly-recap__table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-secondary);
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.weekly-recap__table td {
+  padding: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.weekly-recap__table tr:last-child td {
+  border-bottom: none;
+}
+
+.weekly-recap__over {
+  color: var(--color-alert);
+  font-weight: 700;
+}

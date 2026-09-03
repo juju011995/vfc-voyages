@@ -1,0 +1,59 @@
+.calendar-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+  padding-bottom: 24px;
+}
+
+.calendar-page__loading {
+  padding-top: 40px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.calendar-page__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 18px;
+}
+
+.calendar-page__day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.calendar-page__day-header h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.calendar-page__editor-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  padding: 10px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.calendar-page__upcoming-title {
+  margin: 8px 0 -4px;
+  font-family: var(--font-heading);
+  font-size: 14px;
+}
+
+@media (min-width: 860px) {
+  .calendar-page__editor-overlay {
+    position: static;
+    max-width: 420px;
+    max-height: none;
+    padding: 0;
+  }
+}
