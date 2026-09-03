@@ -13,6 +13,7 @@ import { getPalette } from "../theme/palette";
 import { AdminDocumentList } from "../components/administratif/AdminDocumentList";
 import { AdminDocumentEditor } from "../components/administratif/AdminDocumentEditor";
 import { AdminTaskList } from "../components/administratif/AdminTaskList";
+import { IconIdCard } from "../components/icons/Icons";
 import "./AdministratifPage.css";
 
 type SubTab = "documents" | "taches";
@@ -104,7 +105,12 @@ export function AdministratifPage({ onOpenTaches }: AdministratifPageProps) {
 
   return (
     <div className="administratif-page">
-      <h2 className="administratif-page__heading">Administratif</h2>
+      <h2 className="administratif-page__heading page-heading">
+        <span className="page-heading-icon">
+          <IconIdCard />
+        </span>
+        Administratif
+      </h2>
 
       <div className="administratif-page__toolbar" role="tablist" aria-label="Sections Administratif">
         <button

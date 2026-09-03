@@ -9,6 +9,7 @@ import type { BudgetPlan, Expense, RouteSegment, Stop } from "../lib/types";
 import { BudgetTrendChart } from "../components/stats/BudgetTrendChart";
 import { CumulativeBudgetChart } from "../components/stats/CumulativeBudgetChart";
 import { KmByCountryChart } from "../components/stats/KmByCountryChart";
+import { IconChartBars } from "../components/icons/Icons";
 import "./StatsPage.css";
 
 export function StatsPage() {
@@ -51,7 +52,12 @@ export function StatsPage() {
 
   return (
     <div className="stats-page">
-      <h2 className="stats-page__heading">Statistiques</h2>
+      <h2 className="stats-page__heading page-heading">
+        <span className="page-heading-icon">
+          <IconChartBars />
+        </span>
+        Statistiques
+      </h2>
 
       <div className="stats-card">
         <h3>Évolution du budget</h3>

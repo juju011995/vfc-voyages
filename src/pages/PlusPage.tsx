@@ -1,31 +1,48 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CalendarPage } from "./CalendarPage";
 import { LokiPage } from "./LokiPage";
-import { MaterielPage } from "./MaterielPage";
 import { VehiclePage } from "./VehiclePage";
 import { AdministratifPage } from "./AdministratifPage";
+import { StatsPage } from "./StatsPage";
 import { SettingsPage } from "./SettingsPage";
+import {
+  IconCalendar,
+  IconPawprint,
+  IconWrench,
+  IconIdCard,
+  IconChartBars,
+  IconGear,
+} from "../components/icons/Icons";
 import "./PlusPage.css";
 
 type PlusSubPage =
   | "menu"
   | "calendrier"
   | "loki"
-  | "materiel"
   | "vehicule"
   | "administratif"
+  | "stats"
   | "parametres";
 
 interface PlusPageProps {
   onOpenTaches: () => void;
 }
 
+const MENU_ITEMS: Array<{ id: PlusSubPage; label: string; icon: ReactNode }> = [
+  { id: "calendrier", label: "Calendrier", icon: <IconCalendar /> },
+  { id: "loki", label: "Loki", icon: <IconPawprint /> },
+  { id: "vehicule", label: "Véhicule", icon: <IconWrench /> },
+  { id: "administratif", label: "Administratif", icon: <IconIdCard /> },
+  { id: "stats", label: "Statistiques", icon: <IconChartBars /> },
+  { id: "parametres", label: "Paramètres", icon: <IconGear /> },
+];
+
 export function PlusPage({ onOpenTaches }: PlusPageProps) {
   const [subPage, setSubPage] = useState<PlusSubPage>("menu");
 
   if (subPage !== "menu") {
     return (
-      <div className="plus-page">
+      <div className="plus-page page-transition" key={subPage}>
         <button
           type="button"
           className="plus-page__back"
@@ -35,69 +52,30 @@ export function PlusPage({ onOpenTaches }: PlusPageProps) {
         </button>
         {subPage === "calendrier" && <CalendarPage onOpenTaches={onOpenTaches} />}
         {subPage === "loki" && <LokiPage onOpenTaches={onOpenTaches} />}
-        {subPage === "materiel" && <MaterielPage />}
         {subPage === "vehicule" && <VehiclePage />}
         {subPage === "administratif" && <AdministratifPage onOpenTaches={onOpenTaches} />}
+        {subPage === "stats" && <StatsPage />}
         {subPage === "parametres" && <SettingsPage />}
       </div>
     );
   }
 
   return (
-    <div className="plus-page">
-      <button
-        type="button"
-        className="plus-page__menu-item"
-        onClick={() => setSubPage("calendrier")}
-      >
-        <span>Calendrier</span>
-        <span className="plus-page__menu-item-arrow">→</span>
-      </button>
-
-      <button
-        type="button"
-        className="plus-page__menu-item"
-        onClick={() => setSubPage("loki")}
-      >
-        <span>Loki</span>
-        <span className="plus-page__menu-item-arrow">→</span>
-      </button>
-
-      <button
-        type="button"
-        className="plus-page__menu-item"
-        onClick={() => setSubPage("materiel")}
-      >
-        <span>Matériel</span>
-        <span className="plus-page__menu-item-arrow">→</span>
-      </button>
-
-      <button
-        type="button"
-        className="plus-page__menu-item"
-        onClick={() => setSubPage("vehicule")}
-      >
-        <span>Véhicule</span>
-        <span className="plus-page__menu-item-arrow">→</span>
-      </button>
-
-      <button
-        type="button"
-        className="plus-page__menu-item"
-        onClick={() => setSubPage("administratif")}
-      >
-        <span>Administratif</span>
-        <span className="plus-page__menu-item-arrow">→</span>
-      </button>
-
-      <button
-        type="button"
-        className="plus-page__menu-item"
-        onClick={() => setSubPage("parametres")}
-      >
-        <span>Paramètres</span>
-        <span className="plus-page__menu-item-arrow">→</span>
-      </button>
+    <div className="plus-page page-transition" key="menu">
+      {MENU_ITEMS.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className="plus-page__menu-item"
+          onClick={() => setSubPage(item.id)}
+        >
+          <span className="plus-page__menu-item-label">
+            <span className="plus-page__menu-item-icon">{item.icon}</span>
+            {item.label}
+          </span>
+          <span className="plus-page__menu-item-arrow">→</span>
+        </button>
+      ))}
     </div>
   );
 }

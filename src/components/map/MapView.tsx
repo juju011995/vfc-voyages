@@ -126,6 +126,7 @@ export function MapView({
           segment={seg}
           color={statusColor(palette, status)}
           label={statusLabel(status)}
+          visited={status === "visite"}
         />
       ))}
 
@@ -160,10 +161,12 @@ function SegmentLine({
   segment,
   color,
   label,
+  visited,
 }: {
   segment: RouteSegment;
   color: string;
   label: string;
+  visited: boolean;
 }) {
   const lineRef = useRef<L.Polyline | null>(null);
 
@@ -189,7 +192,10 @@ function SegmentLine({
         color,
         weight: 5,
         opacity: segment.stale ? 0.6 : 0.9,
-        dashArray: segment.stale ? "2 6" : undefined,
+        // Pointillés tant que l'étape d'arrivée n'est pas visitée — même
+        // logique de trait "en attente" que segment.stale, juste un dash
+        // plus large pour rester lisible à l'échelle d'un itinéraire entier.
+        dashArray: !visited ? "2 10" : segment.stale ? "2 6" : undefined,
       }}
       eventHandlers={{ click: handleClick }}
     />

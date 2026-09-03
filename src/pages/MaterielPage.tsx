@@ -233,8 +233,6 @@ export function MaterielPage() {
 
   return (
     <div className="materiel-page">
-      <h2 className="materiel-page__heading">Matériel</h2>
-
       <MaterielSummaryCard totalEUR={total} spentEUR={spent} counts={counts} />
 
       <TagFilter

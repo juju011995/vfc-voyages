@@ -13,6 +13,7 @@ import { getPalette } from "../theme/palette";
 import { MonthGrid } from "../components/calendar/MonthGrid";
 import { AgendaList } from "../components/calendar/AgendaList";
 import { EventEditor } from "../components/calendar/EventEditor";
+import { IconCalendar } from "../components/icons/Icons";
 import "./CalendarPage.css";
 
 function todayIso(): string {
@@ -105,7 +106,12 @@ export function CalendarPage({ onOpenTaches }: CalendarPageProps) {
 
   return (
     <div className="calendar-page">
-      <h2 className="calendar-page__heading">Calendrier</h2>
+      <h2 className="calendar-page__heading page-heading">
+        <span className="page-heading-icon">
+          <IconCalendar />
+        </span>
+        Calendrier
+      </h2>
 
       <MonthGrid
         month={month}

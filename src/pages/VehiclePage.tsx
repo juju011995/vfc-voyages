@@ -19,6 +19,7 @@ import { MaintenanceCard } from "../components/vehicle/MaintenanceCard";
 import { MaintenanceLogEditor } from "../components/vehicle/MaintenanceLogEditor";
 import { MaintenanceLogList } from "../components/vehicle/MaintenanceLogList";
 import { IntervalManager } from "../components/vehicle/IntervalManager";
+import { IconWrench } from "../components/icons/Icons";
 import "./VehiclePage.css";
 
 type SubTab = "echeances" | "carnet";
@@ -221,7 +222,12 @@ export function VehiclePage() {
 
   return (
     <div className="vehicle-page">
-      <h2 className="vehicle-page__heading">Véhicule</h2>
+      <h2 className="vehicle-page__heading page-heading">
+        <span className="page-heading-icon">
+          <IconWrench />
+        </span>
+        Véhicule
+      </h2>
 
       <div className="vehicle-page__toolbar" role="tablist" aria-label="Sections Véhicule">
         <button

@@ -64,3 +64,64 @@ textarea {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* -- En-tête de module (icône thématique + titre), utilisé par chaque page
+   accessible depuis "Plus" (Carte/Budget/Tâches/Matériel/Accueil affichent
+   déjà leur icône via le titre d'AppShell). -- */
+.page-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-heading-icon {
+  display: flex;
+  color: var(--color-action);
+  flex: 0 0 auto;
+}
+
+/* -- Transition douce lors d'un changement d'onglet/de page -- */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: page-fade-in 0.22s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
+}
+
+/* -- Micro-animation "pop" au passage à Fait/Acheté (statut atteint à
+   l'instant, cf. TaskCard et MaterielItemCard) -- */
+@keyframes status-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.is-pop {
+  animation: status-pop 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-pop {
+    animation: none;
+  }
+}

@@ -32,6 +32,18 @@
   cursor: pointer;
 }
 
+.plus-page__menu-item-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.plus-page__menu-item-icon {
+  display: flex;
+  color: var(--color-action);
+  flex: 0 0 auto;
+}
+
 .plus-page__menu-item-arrow {
   color: var(--color-action);
 }

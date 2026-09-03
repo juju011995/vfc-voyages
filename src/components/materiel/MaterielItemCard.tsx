@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { MaterielItem, MaterielItemStatus, Task } from "../../lib/types";
 import { MATERIEL_STATUS_LABELS, materielStatusStage } from "../../lib/materielCalc";
 import { STATUS_STAGE_COLOR, STATUS_TEXT_ON_COLOR } from "../../lib/statusColors";
@@ -22,6 +23,16 @@ export function MaterielItemCard({
   onOpen,
   onStatusChange,
 }: MaterielItemCardProps) {
+  const [justCompleted, setJustCompleted] = useState(false);
+
+  function handleStatusClick(status: MaterielItemStatus) {
+    if (status === "achete" && item.status !== "achete") {
+      setJustCompleted(true);
+      window.setTimeout(() => setJustCompleted(false), 400);
+    }
+    onStatusChange(item.id, status);
+  }
+
   return (
     <div className="materiel-item-card">
       <button type="button" className="materiel-item-card__body" onClick={() => onOpen(item)}>
@@ -51,17 +62,18 @@ export function MaterielItemCard({
         {STATUSES.map((status) => {
           const color = STATUS_STAGE_COLOR[materielStatusStage(status)];
           const active = status === item.status;
+          const pop = active && status === "achete" && justCompleted;
           return (
             <button
               key={status}
               type="button"
-              className={active ? "is-active" : ""}
+              className={(active ? "is-active" : "") + (pop ? " is-pop" : "")}
               style={
                 active
                   ? { background: color, color: STATUS_TEXT_ON_COLOR, borderColor: color }
                   : { borderColor: color }
               }
-              onClick={() => onStatusChange(item.id, status)}
+              onClick={() => handleStatusClick(status)}
             >
               {MATERIEL_STATUS_LABELS[status]}
             </button>

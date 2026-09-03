@@ -5,6 +5,7 @@ import { useSettings } from "../settings/SettingsProvider";
 import { useTheme, type ThemeChoice } from "../theme/ThemeProvider";
 import { getPalette } from "../theme/palette";
 import { PersonBadge } from "../components/shared/PersonBadge";
+import { IconGear } from "../components/icons/Icons";
 import "./SettingsPage.css";
 
 const THEME_CHOICES: Array<{ value: ThemeChoice; label: string }> = [
@@ -124,7 +125,12 @@ export function SettingsPage() {
 
   return (
     <div className="settings-page">
-      <h2 className="settings-page__heading">Paramètres</h2>
+      <h2 className="settings-page__heading page-heading">
+        <span className="page-heading-icon">
+          <IconGear />
+        </span>
+        Paramètres
+      </h2>
 
       <div className="settings-card">
         <h3>Apparence</h3>

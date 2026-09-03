@@ -14,6 +14,7 @@ interface TaskColumnProps {
   tasks: Task[];
   tags: TaskTag[];
   palette: Palette;
+  justCompletedIds: Set<string>;
   onOpen: (task: Task) => void;
   onStatusChange: (id: string, status: TaskStatus) => void;
 }
@@ -24,6 +25,7 @@ export function TaskColumn({
   tasks,
   tags,
   palette,
+  justCompletedIds,
   onOpen,
   onStatusChange,
 }: TaskColumnProps) {
@@ -46,6 +48,7 @@ export function TaskColumn({
             task={task}
             tag={tags.find((t) => t.id === task.tagId)}
             palette={palette}
+            justCompleted={justCompletedIds.has(task.id)}
             onOpen={onOpen}
             onStatusChange={onStatusChange}
           />

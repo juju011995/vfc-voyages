@@ -26,6 +26,8 @@ interface TaskCardProps {
   task: Task;
   tag?: TaskTag;
   palette: Palette;
+  /** true juste après le passage à "fait" — déclenche le pop, cf. TachesPage (état porté par le parent : la carte change de colonne/se remonte au changement de statut, un état local serait perdu avant d'avoir pu s'afficher). */
+  justCompleted?: boolean;
   onOpen: (task: Task) => void;
   onStatusChange: (id: string, status: TaskStatus) => void;
 }
@@ -37,7 +39,14 @@ function formatDueDate(dateStr: string): string {
   });
 }
 
-export function TaskCard({ task, tag, palette, onOpen, onStatusChange }: TaskCardProps) {
+export function TaskCard({
+  task,
+  tag,
+  palette,
+  justCompleted,
+  onOpen,
+  onStatusChange,
+}: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
   });
@@ -107,11 +116,12 @@ export function TaskCard({ task, tag, palette, onOpen, onStatusChange }: TaskCar
         {STATUSES.map((status) => {
           const color = STATUS_STAGE_COLOR[taskStatusStage(status)];
           const active = status === task.status;
+          const pop = active && status === "fait" && justCompleted;
           return (
             <button
               key={status}
               type="button"
-              className={active ? "is-active" : ""}
+              className={(active ? "is-active" : "") + (pop ? " is-pop" : "")}
               style={
                 active
                   ? { background: color, color: STATUS_TEXT_ON_COLOR, borderColor: color }

@@ -45,6 +45,7 @@ import { VetEditor } from "../components/loki/VetEditor";
 import { BorderChecklist } from "../components/loki/BorderChecklist";
 import { LokiTaskList } from "../components/loki/LokiTaskList";
 import { CountryManager } from "../components/loki/CountryManager";
+import { IconPawprint } from "../components/icons/Icons";
 import "./LokiPage.css";
 
 type SubTab = "sante" | "veterinaires" | "frontieres" | "taches";
@@ -339,7 +340,12 @@ export function LokiPage({ onOpenTaches }: LokiPageProps) {
 
   return (
     <div className="loki-page">
-      <h2 className="loki-page__heading">Loki</h2>
+      <h2 className="loki-page__heading page-heading">
+        <span className="page-heading-icon">
+          <IconPawprint />
+        </span>
+        Loki
+      </h2>
 
       <div className="loki-page__toolbar" role="tablist" aria-label="Sections Loki">
         <button

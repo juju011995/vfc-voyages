@@ -12,12 +12,6 @@
   color: var(--color-text-secondary);
 }
 
-.materiel-page__heading {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 18px;
-}
-
 .materiel-page__status-filter {
   display: flex;
   border: 1px solid var(--color-border);

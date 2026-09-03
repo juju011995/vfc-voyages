@@ -45,6 +45,10 @@ export function TachesPage() {
   const [mobileStatus, setMobileStatus] = useState<TaskStatus>("a-faire");
   const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>();
   const [showTagManager, setShowTagManager] = useState(false);
+  // Porté ici (et non dans TaskCard) car une carte qui passe à "fait" change
+  // de colonne — elle est donc démontée puis remontée ailleurs, ce qui
+  // effacerait un état local avant d'avoir pu afficher le pop.
+  const [justCompletedIds, setJustCompletedIds] = useState<Set<string>>(new Set());
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -127,6 +131,17 @@ export function TachesPage() {
   }
 
   async function handleStatusChange(id: string, status: TaskStatus) {
+    const wasAlreadyDone = tasks.find((t) => t.id === id)?.status === "fait";
+    if (status === "fait" && !wasAlreadyDone) {
+      setJustCompletedIds((prev) => new Set(prev).add(id));
+      window.setTimeout(() => {
+        setJustCompletedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }, 400);
+    }
     setTasks((prev) => {
       const next = prev.map((t) =>
         t.id === id ? { ...t, status, updatedAt: Date.now() } : t,
@@ -262,6 +277,7 @@ export function TachesPage() {
                 tasks={tasksByStatus[col.status]}
                 tags={tags}
                 palette={palette}
+                justCompletedIds={justCompletedIds}
                 onOpen={(task) => setSelectedTaskId(task.id)}
                 onStatusChange={handleStatusChange}
               />

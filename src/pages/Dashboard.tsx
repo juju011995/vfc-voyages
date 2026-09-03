@@ -219,19 +219,20 @@ export function Dashboard({
             className="dashboard__mini-map"
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {segments.map((seg) => (
-              <Polyline
-                key={`${seg.fromId}-${seg.toId}`}
-                positions={seg.geometry}
-                pathOptions={{
-                  color: statusColor(
-                    palette,
-                    stops.find((s) => s.id === seg.toId)?.status ?? "a-visiter",
-                  ),
-                  weight: 4,
-                }}
-              />
-            ))}
+            {segments.map((seg) => {
+              const toStatus = stops.find((s) => s.id === seg.toId)?.status ?? "a-visiter";
+              return (
+                <Polyline
+                  key={`${seg.fromId}-${seg.toId}`}
+                  positions={seg.geometry}
+                  pathOptions={{
+                    color: statusColor(palette, toStatus),
+                    weight: 4,
+                    dashArray: toStatus === "a-visiter" ? "2 8" : undefined,
+                  }}
+                />
+              );
+            })}
             {stops.map((stop) => (
               <CircleMarker
                 key={stop.id}
