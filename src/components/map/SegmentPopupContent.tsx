@@ -98,7 +98,11 @@ export function SegmentPopupContent({
             </div>
           ) : segment.routingFailed ? (
             <div className="segment-popup__notice">
-              <p>Tracé indisponible pour le moment (réseau).</p>
+              <p>
+                {segment.failureReason === "processing"
+                  ? "Réponse reçue mais impossible à interpréter pour ce tracé — probablement un bug, pas un souci réseau."
+                  : "Tracé indisponible pour le moment (réseau)."}
+              </p>
               <button type="button" className="btn btn--secondary" onClick={onRetry}>
                 Réessayer
               </button>

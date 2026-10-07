@@ -43,8 +43,10 @@ export interface RouteSegment {
   durationSeconds?: number;
   /** true : tracé servi depuis le cache car le calcul en direct a échoué (tracé réel déjà connu, pas une ligne droite de secours). */
   stale?: boolean;
-  /** true : aucune route n'a pu être obtenue (réseau indisponible après plusieurs tentatives) — ligne droite de secours temporaire, jamais mise en cache. */
+  /** true : aucune route n'a pu être obtenue (réseau indisponible après plusieurs tentatives, ou réponse OSRM inexploitable) — ligne droite de secours temporaire, jamais mise en cache. */
   routingFailed?: boolean;
+  /** Pourquoi routingFailed est vrai — affiché différemment dans le popup : "network" = pas de réponse du serveur, "processing" = réponse reçue mais impossible à interpréter (bug à corriger, pas un souci de connexion). */
+  failureReason?: "network" | "processing";
   /** true : OSRM a répondu mais n'a trouvé aucun itinéraire routier (ex. traversée maritime) — différent d'un échec réseau, incite à choisir bateau/train/avion plutôt qu'à réessayer. */
   noRouteFound?: boolean;
 }

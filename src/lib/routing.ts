@@ -32,7 +32,8 @@ interface OsrmGeometryResult {
 
 type OsrmFailure =
   | { kind: "no-route" } // OSRM a répondu, mais aucun itinéraire routier n'existe (ex. traversée maritime)
-  | { kind: "network" }; // requête impossible/échouée — potentiellement transitoire
+  | { kind: "network" } // requête impossible/échouée — potentiellement transitoire
+  | { kind: "processing" }; // réponse reçue (HTTP 200) mais impossible à interpréter — pas un souci réseau
 
 interface OsrmResponse {
   code: string;
@@ -57,14 +58,28 @@ async function fetchSegmentFromOsrmOnce(
   let response: Response;
   try {
     response = await fetch(url);
-  } catch {
+  } catch (err) {
+    console.error(`[routing] requête OSRM impossible (${from.name} → ${to.name})`, err);
     throw { kind: "network" } satisfies OsrmFailure;
   }
   if (!response.ok) {
+    console.error(
+      `[routing] OSRM a répondu avec le statut ${response.status} (${from.name} → ${to.name})`,
+    );
     throw { kind: "network" } satisfies OsrmFailure;
   }
 
-  const data: OsrmResponse = await response.json();
+  let data: OsrmResponse;
+  try {
+    data = await response.json();
+  } catch (err) {
+    console.error(
+      `[routing] réponse OSRM illisible (JSON invalide) pour ${from.name} → ${to.name}`,
+      err,
+    );
+    throw { kind: "processing" } satisfies OsrmFailure;
+  }
+
   if (data.code !== "Ok" || !data.routes?.length) {
     // Réponse valide du serveur : ce n'est pas un souci réseau, juste aucun
     // itinéraire routier possible entre ces deux points.
@@ -72,15 +87,24 @@ async function fetchSegmentFromOsrmOnce(
   }
 
   const route = data.routes[0];
+  const coordinates = route.geometry?.coordinates;
+  if (!Array.isArray(coordinates) || coordinates.length === 0) {
+    console.error(
+      `[routing] réponse OSRM "Ok" mais sans géométrie exploitable pour ${from.name} → ${to.name}`,
+      route,
+    );
+    throw { kind: "processing" } satisfies OsrmFailure;
+  }
+
   return {
     // GeoJSON = [lng, lat] ; Leaflet attend [lat, lng].
-    geometry: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+    geometry: coordinates.map(([lng, lat]) => [lat, lng]),
     distanceMeters: route.distance,
     durationSeconds: route.duration,
   };
 }
 
-/** Jusqu'à 3 tentatives espacées — seulement pour un échec réseau/transitoire, jamais pour "aucune route trouvée". */
+/** Jusqu'à 3 tentatives espacées — seulement pour un échec réseau/transitoire, jamais pour "aucune route trouvée" ni une réponse inexploitable (réessayer ne changerait rien). */
 async function fetchSegmentFromOsrmWithRetry(
   from: Stop,
   to: Stop,
@@ -90,7 +114,7 @@ async function fetchSegmentFromOsrmWithRetry(
       return await fetchSegmentFromOsrmOnce(from, to);
     } catch (err) {
       const failure = err as OsrmFailure;
-      if (failure.kind === "no-route") throw failure;
+      if (failure.kind !== "network") throw failure;
       const isLastAttempt = attempt === RETRY_ATTEMPTS - 1;
       if (isLastAttempt) throw failure;
       await sleep(RETRY_DELAYS_MS[attempt] ?? RETRY_DELAYS_MS.at(-1)!);
@@ -98,6 +122,27 @@ async function fetchSegmentFromOsrmWithRetry(
   }
   // Inatteignable (la boucle retourne ou lève à chaque itération), mais TS a besoin d'un retour.
   throw { kind: "network" } satisfies OsrmFailure;
+}
+
+// Évite de relancer un appel déjà en cours pour la même paire de coordonnées
+// + mode (ex. plusieurs clics sur "Réessayer", ou popup + marqueur de mode
+// montés en même temps) : les appelants simultanés partagent la même requête
+// au lieu d'en déclencher une nouvelle chacun.
+const inFlightOsrmRequests = new Map<string, Promise<OsrmGeometryResult>>();
+
+function fetchSegmentFromOsrmDeduped(
+  dedupeKey: string,
+  from: Stop,
+  to: Stop,
+): Promise<OsrmGeometryResult> {
+  const existing = inFlightOsrmRequests.get(dedupeKey);
+  if (existing) return existing;
+
+  const request = fetchSegmentFromOsrmWithRetry(from, to).finally(() => {
+    inFlightOsrmRequests.delete(dedupeKey);
+  });
+  inFlightOsrmRequests.set(dedupeKey, request);
+  return request;
 }
 
 function roundCoord(n: number): string {
@@ -156,7 +201,11 @@ function arcGeometry(from: Stop, to: Stop): [number, number][] {
   return points;
 }
 
-function straightLineFallback(from: Stop, to: Stop): RouteSegment {
+function straightLineFallback(
+  from: Stop,
+  to: Stop,
+  failureReason: "network" | "processing",
+): RouteSegment {
   const distanceMeters = haversineMeters(from.lat, from.lng, to.lat, to.lng);
   return {
     fromId: from.id,
@@ -167,7 +216,17 @@ function straightLineFallback(from: Stop, to: Stop): RouteSegment {
     // Estimation grossière (60 km/h) tant qu'un vrai tracé n'a pas pu être calculé.
     durationSeconds: (distanceMeters / 1000 / 60) * 3600,
     routingFailed: true,
+    failureReason,
   };
+}
+
+/** Écrit dans le cache sans jamais faire échouer l'appelant : le tracé obtenu doit s'afficher même si sa mise en cache échoue (ex. document Firestore invalide) — seule une trace console permet alors de diagnostiquer. */
+async function cacheBestEffort(label: string, write: () => Promise<void>): Promise<void> {
+  try {
+    await write();
+  } catch (err) {
+    console.error(`[routing] échec de mise en cache (${label}) — le tracé reste affiché normalement`, err);
+  }
 }
 
 /** Calcule (ou récupère du cache) le segment pour une liaison entre deux étapes consécutives, selon le mode choisi. */
@@ -186,7 +245,7 @@ export async function getRouteSegment(
       geometry,
       distanceMeters,
     };
-    await cacheSegment(segment);
+    await cacheBestEffort(`segment ${mode} ${from.name} → ${to.name}`, () => cacheSegment(segment));
     return segment;
   }
 
@@ -194,18 +253,16 @@ export async function getRouteSegment(
   const cachedGeometry = await getCachedRouteGeometry(geometryCacheKey);
   if (cachedGeometry) {
     const segment: RouteSegment = { fromId: from.id, toId: to.id, mode, ...cachedGeometry };
-    await cacheSegment(segment);
+    await cacheBestEffort(`segment ${from.name} → ${to.name}`, () => cacheSegment(segment));
     return segment;
   }
 
+  let result: OsrmGeometryResult;
   try {
-    const result = await fetchSegmentFromOsrmWithRetry(from, to);
-    await cacheRouteGeometry(geometryCacheKey, result);
-    const segment: RouteSegment = { fromId: from.id, toId: to.id, mode, ...result };
-    await cacheSegment(segment);
-    return segment;
+    result = await fetchSegmentFromOsrmDeduped(geometryCacheKey, from, to);
   } catch (err) {
     const failure = err as OsrmFailure;
+    console.error(`[routing] échec du calcul d'itinéraire (${from.name} → ${to.name})`, failure);
     if (failure.kind === "no-route") {
       const distanceMeters = haversineMeters(from.lat, from.lng, to.lat, to.lng);
       return {
@@ -219,8 +276,17 @@ export async function getRouteSegment(
     }
     const cachedSegment = await getCachedSegment(from.id, to.id);
     if (cachedSegment) return { ...cachedSegment, mode, stale: true };
-    return straightLineFallback(from, to);
+    return straightLineFallback(from, to, failure.kind === "processing" ? "processing" : "network");
   }
+
+  // OSRM a répondu avec un vrai tracé : on le retourne tout de suite — la
+  // mise en cache ne doit jamais empêcher l'affichage du tracé obtenu.
+  const segment: RouteSegment = { fromId: from.id, toId: to.id, mode, ...result };
+  await cacheBestEffort(`géométrie ${from.name} → ${to.name}`, () =>
+    cacheRouteGeometry(geometryCacheKey, result),
+  );
+  await cacheBestEffort(`segment ${from.name} → ${to.name}`, () => cacheSegment(segment));
+  return segment;
 }
 
 /** Exécute `fn` sur chaque élément avec au plus `limit` appels simultanés, en conservant l'ordre des résultats. */

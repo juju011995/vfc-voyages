@@ -115,15 +115,41 @@ export async function deleteStop(id: string): Promise<void> {
   await Promise.all(relatedSegmentKeys.map((k) => del(k)));
 }
 
+// Firestore interdit les tableaux contenant directement d'autres tableaux
+// ("Nested arrays are not supported") : la géométrie d'un tracé, en mémoire
+// un tableau de paires [lat, lng], est donc aplatie en [lat1, lng1, lat2,
+// lng2, ...] avant toute écriture, et reconstituée à la lecture. Sans ça,
+// l'écriture du cache échoue silencieusement (exception synchrone levée par
+// le SDK) et ce rejet remontait à tort jusqu'à routing.ts comme un échec
+// réseau alors que le tracé avait bien été obtenu.
+function flattenGeometry(geometry: [number, number][]): number[] {
+  const flat: number[] = [];
+  for (const [lat, lng] of geometry) flat.push(lat, lng);
+  return flat;
+}
+
+function unflattenGeometry(flat: number[]): [number, number][] {
+  const geometry: [number, number][] = [];
+  for (let i = 0; i < flat.length; i += 2) geometry.push([flat[i], flat[i + 1]]);
+  return geometry;
+}
+
 export async function getCachedSegment(
   fromId: string,
   toId: string,
 ): Promise<RouteSegment | undefined> {
-  return get<RouteSegment>(segmentCacheKey(fromId, toId));
+  const raw = await get<Omit<RouteSegment, "geometry"> & { geometry: number[] }>(
+    segmentCacheKey(fromId, toId),
+  );
+  if (!raw) return undefined;
+  return { ...raw, geometry: unflattenGeometry(raw.geometry) };
 }
 
 export async function cacheSegment(segment: RouteSegment): Promise<void> {
-  await set(segmentCacheKey(segment.fromId, segment.toId), segment);
+  await set(segmentCacheKey(segment.fromId, segment.toId), {
+    ...segment,
+    geometry: flattenGeometry(segment.geometry),
+  });
 }
 
 /**
@@ -135,14 +161,23 @@ export async function cacheSegment(segment: RouteSegment): Promise<void> {
 export async function getCachedRouteGeometry(
   cacheKey: string,
 ): Promise<Pick<RouteSegment, "geometry" | "distanceMeters" | "durationSeconds"> | undefined> {
-  return get(`${ROUTE_GEOMETRY_CACHE_PREFIX}${cacheKey}`);
+  const raw = await get<
+    Omit<Pick<RouteSegment, "geometry" | "distanceMeters" | "durationSeconds">, "geometry"> & {
+      geometry: number[];
+    }
+  >(`${ROUTE_GEOMETRY_CACHE_PREFIX}${cacheKey}`);
+  if (!raw) return undefined;
+  return { ...raw, geometry: unflattenGeometry(raw.geometry) };
 }
 
 export async function cacheRouteGeometry(
   cacheKey: string,
   value: Pick<RouteSegment, "geometry" | "distanceMeters" | "durationSeconds">,
 ): Promise<void> {
-  await set(`${ROUTE_GEOMETRY_CACHE_PREFIX}${cacheKey}`, value);
+  await set(`${ROUTE_GEOMETRY_CACHE_PREFIX}${cacheKey}`, {
+    ...value,
+    geometry: flattenGeometry(value.geometry),
+  });
 }
 
 export async function listSegmentTransports(): Promise<SegmentTransport[]> {
