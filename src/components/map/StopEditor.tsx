@@ -1,15 +1,28 @@
 import { useEffect, useState } from "react";
-import type { Stop, StopStatus } from "../../lib/types";
+import type { SegmentTransport, Stop, StopStatus, TransportMode } from "../../lib/types";
+import { TransportModeToggle } from "./TransportModeToggle";
 import "./StopEditor.css";
 
 interface StopEditorProps {
   stop: Stop;
+  /** Étape précédente dans l'itinéraire, si elle existe — pour le sélecteur "Comment j'y vais ?". */
+  previousStop?: Stop;
+  transport?: SegmentTransport;
+  onSetMode: (mode: TransportMode) => void;
   onClose: () => void;
   onSave: (updates: Partial<Stop>) => void;
   onDelete: (id: string) => void;
 }
 
-export function StopEditor({ stop, onClose, onSave, onDelete }: StopEditorProps) {
+export function StopEditor({
+  stop,
+  previousStop,
+  transport,
+  onSetMode,
+  onClose,
+  onSave,
+  onDelete,
+}: StopEditorProps) {
   const [datePrevue, setDatePrevue] = useState(stop.datePrevue ?? "");
   const [notes, setNotes] = useState(stop.notes ?? "");
   const [status, setStatus] = useState<StopStatus>(stop.status);
@@ -62,6 +75,13 @@ export function StopEditor({ stop, onClose, onSave, onDelete }: StopEditorProps)
           </button>
         </div>
       </label>
+
+      {previousStop && (
+        <div className="stop-editor__field">
+          <span>Comment j'y vais depuis {previousStop.name} ?</span>
+          <TransportModeToggle mode={transport?.mode ?? "road"} onChange={onSetMode} />
+        </div>
+      )}
 
       <label className="stop-editor__field">
         <span>Date prévue</span>

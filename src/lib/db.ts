@@ -25,6 +25,7 @@ import type {
   MaterielCategory,
   MaterielItem,
   RouteSegment,
+  SegmentTransport,
   Stop,
   Task,
   TaskTag,
@@ -42,6 +43,8 @@ import { ITEM_STATUS_TO_TASK_STATUS, TASK_STATUS_TO_ITEM_STATUS } from "./materi
 
 const STOPS_PREFIX = "stop:";
 const SEGMENT_CACHE_PREFIX = "segment-cache:";
+const SEGMENT_TRANSPORT_PREFIX = "segment-transport:";
+const ROUTE_GEOMETRY_CACHE_PREFIX = "route-geometry:";
 const GPX_TRACK_KEY = "gpx-track";
 const MAP_SETTINGS_KEY = "map-settings";
 
@@ -77,6 +80,10 @@ function segmentCacheKey(fromId: string, toId: string) {
   return `${SEGMENT_CACHE_PREFIX}${fromId}:${toId}`;
 }
 
+function segmentTransportKey(fromId: string, toId: string) {
+  return `${SEGMENT_TRANSPORT_PREFIX}${fromId}:${toId}`;
+}
+
 export async function listStops(): Promise<Stop[]> {
   const allKeys = await keys();
   const stopKeys = allKeys.filter(
@@ -102,7 +109,7 @@ export async function deleteStop(id: string): Promise<void> {
   const relatedSegmentKeys = allKeys.filter(
     (k): k is string =>
       typeof k === "string" &&
-      k.startsWith(SEGMENT_CACHE_PREFIX) &&
+      (k.startsWith(SEGMENT_CACHE_PREFIX) || k.startsWith(SEGMENT_TRANSPORT_PREFIX)) &&
       k.includes(id),
   );
   await Promise.all(relatedSegmentKeys.map((k) => del(k)));
@@ -117,6 +124,38 @@ export async function getCachedSegment(
 
 export async function cacheSegment(segment: RouteSegment): Promise<void> {
   await set(segmentCacheKey(segment.fromId, segment.toId), segment);
+}
+
+/**
+ * Cache interne du résultat OSRM, clé par coordonnées (arrondies) + mode —
+ * distinct de segment-cache (qui représente l'état courant d'une PAIRE
+ * d'étapes). Réutilisé uniquement par routing.ts pour éviter de rappeler
+ * OSRM si les coordonnées n'ont pas changé ; jamais lu/écrit ailleurs.
+ */
+export async function getCachedRouteGeometry(
+  cacheKey: string,
+): Promise<Pick<RouteSegment, "geometry" | "distanceMeters" | "durationSeconds"> | undefined> {
+  return get(`${ROUTE_GEOMETRY_CACHE_PREFIX}${cacheKey}`);
+}
+
+export async function cacheRouteGeometry(
+  cacheKey: string,
+  value: Pick<RouteSegment, "geometry" | "distanceMeters" | "durationSeconds">,
+): Promise<void> {
+  await set(`${ROUTE_GEOMETRY_CACHE_PREFIX}${cacheKey}`, value);
+}
+
+export async function listSegmentTransports(): Promise<SegmentTransport[]> {
+  const allKeys = await keys();
+  const transportKeys = allKeys.filter(
+    (k): k is string => typeof k === "string" && k.startsWith(SEGMENT_TRANSPORT_PREFIX),
+  );
+  const transports = await Promise.all(transportKeys.map((k) => get<SegmentTransport>(k)));
+  return transports.filter((t): t is SegmentTransport => Boolean(t));
+}
+
+export async function saveSegmentTransport(transport: SegmentTransport): Promise<void> {
+  await set(segmentTransportKey(transport.fromId, transport.toId), transport);
 }
 
 export async function getGpxTrack(): Promise<GpxTrack | undefined> {

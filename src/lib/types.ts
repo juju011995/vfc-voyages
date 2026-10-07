@@ -24,18 +24,54 @@ export interface Stop {
   updatedAt: number;
 }
 
+/** Mode de transport entre deux étapes consécutives. "road" = défaut, suit les routes réelles (OSRM). */
+export type TransportMode = "road" | "ferry" | "train" | "plane";
+
 /** Géométrie + métriques d'un segment routé entre deux étapes consécutives. */
 export interface RouteSegment {
   /** id de l'étape de départ */
   fromId: string;
   /** id de l'étape d'arrivée — son statut détermine la couleur du segment */
   toId: string;
-  /** [lat, lng][] suivant les routes réelles (issu d'OSRM) */
+  /** Mode de transport — absent sur d'anciennes données = "road" (compatibilité). */
+  mode?: TransportMode;
+  /** [lat, lng][] suivant les routes réelles (mode road, via OSRM) ou une ligne/arc approximatif (autres modes) */
   geometry: [number, number][];
+  /** Distance réelle routière (mode road) ou à vol d'oiseau indicative (autres modes), en mètres. */
   distanceMeters: number;
-  durationSeconds: number;
-  /** true si la géométrie vient du cache local (calculée hors-ligne indisponible) */
+  /** Durée calculée (mode road uniquement, via OSRM) — absente pour les autres modes (cf. SegmentTransport.durationLabel). */
+  durationSeconds?: number;
+  /** true : tracé servi depuis le cache car le calcul en direct a échoué (tracé réel déjà connu, pas une ligne droite de secours). */
   stale?: boolean;
+  /** true : aucune route n'a pu être obtenue (réseau indisponible après plusieurs tentatives) — ligne droite de secours temporaire, jamais mise en cache. */
+  routingFailed?: boolean;
+  /** true : OSRM a répondu mais n'a trouvé aucun itinéraire routier (ex. traversée maritime) — différent d'un échec réseau, incite à choisir bateau/train/avion plutôt qu'à réessayer. */
+  noRouteFound?: boolean;
+}
+
+/**
+ * Mode de transport, coût et notes choisis pour la liaison entre deux étapes
+ * consécutives — persisté séparément de RouteSegment (qui n'est qu'un cache
+ * de géométrie/calcul) car c'est un choix de l'utilisateur à conserver même
+ * quand le tracé doit être recalculé. Identifié par la paire d'étapes :
+ * redevient implicitement "road" si cette paire cesse d'être adjacente après
+ * une réorganisation (aucune entrée = mode road par défaut).
+ */
+export interface SegmentTransport {
+  id: string; // `${fromId}:${toId}`
+  fromId: string;
+  toId: string;
+  mode: TransportMode;
+  /** Coût estimé du trajet (prévisionnel, distinct des dépenses réelles du Budget). */
+  costAmount?: number;
+  costCurrency?: string;
+  /** Coût converti en euros au moment de la saisie (même principe que Expense.amountEUR). */
+  costAmountEUR?: number;
+  /** Durée libre pour ferry/train/plane (ex: "20 h", "2 h 30") — OSRM ne la fournit pas pour ces modes. */
+  durationLabel?: string;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface GpxPoint {

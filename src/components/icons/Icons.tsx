@@ -16,7 +16,7 @@ export function IconHome() {
   );
 }
 
-/** Van/4x4 avec cellule pop-up à l'arrière — module Carte. */
+/** Van/4x4 avec cellule pop-up à l'arrière — module Carte, et mode de transport "route" par défaut. */
 export function IconVan() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
@@ -30,6 +30,71 @@ export function IconVan() {
       <path d="M2 17h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
       <circle cx="6.5" cy="18" r="1.6" fill="currentColor" />
       <circle cx="17.5" cy="18" r="1.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Mode de transport "ferry". */
+export function IconFerry() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+      <path
+        d="M4 14h16l-2 5H6l-2-5Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8 14V9h5l3 5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M10 9V5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M2 21q2.5-2 5 0t5 0 5 0 5 0"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/** Mode de transport "train". */
+export function IconTrain() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+      <rect x="4" y="5" width="16" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M4 10.5h16" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="6.5" y="7" width="4" height="2.8" rx="0.6" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="13.5" y="7" width="4" height="2.8" rx="0.6" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="8" cy="18.3" r="1.6" fill="currentColor" />
+      <circle cx="16" cy="18.3" r="1.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Mode de transport "avion". */
+export function IconPlane() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+      <path d="M12 2v16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M3 11.5 12 8l9 3.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.5 17 12 15.3 15.5 17"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

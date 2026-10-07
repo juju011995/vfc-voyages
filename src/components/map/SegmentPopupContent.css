@@ -1,0 +1,118 @@
+.segment-popup {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-text);
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.segment-popup strong {
+  font-family: var(--font-heading);
+}
+
+.segment-popup__notice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.segment-popup__notice p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.segment-popup__quick-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.segment-popup__quick-modes .btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.segment-popup__quick-modes .btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.segment-popup__transport-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.segment-popup__hint {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+.segment-popup__row {
+  display: flex;
+  gap: 8px;
+}
+
+.segment-popup__row .segment-popup__field {
+  flex: 1;
+}
+
+.segment-popup__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.segment-popup__field--currency {
+  flex: 0 0 72px;
+}
+
+.segment-popup__field input,
+.segment-popup__field select {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+
+.segment-popup__transport-form .btn {
+  align-self: flex-start;
+  padding: 6px 14px;
+  font-size: 12.5px;
+}
+
+.segment-mode-marker {
+  background: transparent;
+  border: none;
+}
+
+.segment-mode-marker__pin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-surface-raised);
+  border: 1.5px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.segment-mode-marker__pin svg {
+  width: 15px;
+  height: 15px;
+}

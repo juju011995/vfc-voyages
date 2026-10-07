@@ -1,16 +1,19 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import {
   MapContainer,
   Marker,
   Polyline,
+  Popup,
   TileLayer,
   useMap,
 } from "react-leaflet";
-import L, { type LatLngBoundsExpression, type LeafletMouseEvent } from "leaflet";
-import type { GpxPoint, RouteSegment, Stop } from "../../lib/types";
+import { renderToStaticMarkup } from "react-dom/server";
+import L, { type LatLngBoundsExpression } from "leaflet";
+import type { GpxPoint, RouteSegment, SegmentTransport, Stop, TransportMode } from "../../lib/types";
 import type { Palette } from "../../theme/palette";
 import { statusColor, statusLabel } from "./mapColors";
-import { formatDistance, formatDuration } from "../../lib/routing";
+import { SegmentPopupContent } from "./SegmentPopupContent";
+import { TRANSPORT_MODE_ICONS } from "./TransportModeToggle";
 import "leaflet/dist/leaflet.css";
 import "./MapView.css";
 
@@ -41,6 +44,17 @@ function makeStopIcon(
   });
 }
 
+function makeModeIcon(mode: TransportMode, color: string): L.DivIcon {
+  const IconComp = TRANSPORT_MODE_ICONS[mode];
+  const svg = renderToStaticMarkup(<IconComp />);
+  return L.divIcon({
+    className: "segment-mode-marker",
+    html: `<div class="segment-mode-marker__pin" style="color:${color}">${svg}</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+}
+
 function FitBounds({ stops }: { stops: Stop[] }) {
   const map = useMap();
   const stopsKey = stops.map((s) => `${s.lat},${s.lng}`).join("|");
@@ -62,6 +76,7 @@ function FitBounds({ stops }: { stops: Stop[] }) {
 interface MapViewProps {
   stops: Stop[];
   segments: RouteSegment[];
+  transportByPair: Map<string, SegmentTransport>;
   gpxPoints?: GpxPoint[];
   showGpxOverlay: boolean;
   editable: boolean;
@@ -69,11 +84,25 @@ interface MapViewProps {
   palette: Palette;
   onStopClick: (id: string) => void;
   onStopMoved: (id: string, lat: number, lng: number) => void;
+  onSetMode: (fromId: string, toId: string, mode: TransportMode) => void;
+  onSaveTransportDetails: (
+    fromId: string,
+    toId: string,
+    updates: {
+      costAmount?: number;
+      costCurrency?: string;
+      costAmountEUR?: number;
+      durationLabel?: string;
+      notes?: string;
+    },
+  ) => void;
+  onRetry: (fromId: string, toId: string) => void;
 }
 
 export function MapView({
   stops,
   segments,
+  transportByPair,
   gpxPoints,
   showGpxOverlay,
   editable,
@@ -81,6 +110,9 @@ export function MapView({
   palette,
   onStopClick,
   onStopMoved,
+  onSetMode,
+  onSaveTransportDetails,
+  onRetry,
 }: MapViewProps) {
   const segmentsWithStatus = useMemo(
     () =>
@@ -124,9 +156,14 @@ export function MapView({
         <SegmentLine
           key={`${seg.fromId}-${seg.toId}`}
           segment={seg}
+          transport={transportByPair.get(`${seg.fromId}:${seg.toId}`)}
           color={statusColor(palette, status)}
+          palette={palette}
           label={statusLabel(status)}
           visited={status === "visite"}
+          onSetMode={(mode) => onSetMode(seg.fromId, seg.toId, mode)}
+          onSaveDetails={(updates) => onSaveTransportDetails(seg.fromId, seg.toId, updates)}
+          onRetry={() => onRetry(seg.fromId, seg.toId)}
         />
       ))}
 
@@ -157,47 +194,94 @@ export function MapView({
   );
 }
 
-function SegmentLine({
-  segment,
-  color,
-  label,
-  visited,
-}: {
+interface SegmentLineProps {
   segment: RouteSegment;
+  transport?: SegmentTransport;
   color: string;
+  palette: Palette;
   label: string;
   visited: boolean;
-}) {
-  const lineRef = useRef<L.Polyline | null>(null);
+  onSetMode: (mode: TransportMode) => void;
+  onSaveDetails: (updates: {
+    costAmount?: number;
+    costCurrency?: string;
+    costAmountEUR?: number;
+    durationLabel?: string;
+    notes?: string;
+  }) => void;
+  onRetry: () => void;
+}
 
-  const handleClick = (e: LeafletMouseEvent) => {
-    const layer = lineRef.current;
-    if (!layer) return;
-    const html = `
-      <div class="segment-popup">
-        <strong>${label}${segment.stale ? " · hors-ligne" : ""}</strong>
-        <div>${formatDistance(segment.distanceMeters)} · ${formatDuration(
-          segment.durationSeconds,
-        )}</div>
-      </div>
-    `;
-    layer.bindPopup(html).openPopup(e.latlng);
-  };
+function SegmentLine({
+  segment,
+  transport,
+  color,
+  palette,
+  label,
+  visited,
+  onSetMode,
+  onSaveDetails,
+  onRetry,
+}: SegmentLineProps) {
+  const mode = segment.mode ?? "road";
+  const placeholder = Boolean(segment.routingFailed || segment.noRouteFound);
+
+  // Tracé "repli" (échec réseau ou aucune route trouvée) : très discret,
+  // neutre — jamais confondu avec un vrai tracé routier ou de statut.
+  const lineColor = placeholder ? palette.textSecondary : color;
+  const weight = placeholder ? 3 : 5;
+  const opacity = placeholder ? 0.5 : segment.stale ? 0.6 : 0.9;
+
+  const dashArray = placeholder
+    ? "3 5"
+    : mode === "ferry"
+      ? "10 6"
+      : mode === "train"
+        ? "6 3 1.5 3"
+        : mode === "plane"
+          ? "1 5"
+          : !visited
+            ? "2 10"
+            : segment.stale
+              ? "2 6"
+              : undefined;
+
+  const midpoint = segment.geometry[Math.floor(segment.geometry.length / 2)];
+
+  const popupContent = (
+    <SegmentPopupContent
+      segment={segment}
+      transport={transport}
+      statusLabel={label}
+      onSetMode={onSetMode}
+      onSaveDetails={onSaveDetails}
+      onRetry={onRetry}
+    />
+  );
 
   return (
-    <Polyline
-      ref={lineRef}
-      positions={segment.geometry}
-      pathOptions={{
-        color,
-        weight: 5,
-        opacity: segment.stale ? 0.6 : 0.9,
-        // Pointillés tant que l'étape d'arrivée n'est pas visitée — même
-        // logique de trait "en attente" que segment.stale, juste un dash
-        // plus large pour rester lisible à l'échelle d'un itinéraire entier.
-        dashArray: !visited ? "2 10" : segment.stale ? "2 6" : undefined,
-      }}
-      eventHandlers={{ click: handleClick }}
-    />
+    <>
+      {mode === "ferry" && !placeholder && (
+        <Polyline
+          positions={segment.geometry}
+          pathOptions={{ color: palette.transportFerry, weight: 9, opacity: 0.45 }}
+          interactive={false}
+        />
+      )}
+      <Polyline
+        positions={segment.geometry}
+        pathOptions={{ color: lineColor, weight, opacity, dashArray }}
+      >
+        <Popup>{popupContent}</Popup>
+      </Polyline>
+      {midpoint && (
+        <Marker
+          position={midpoint}
+          icon={makeModeIcon(mode, placeholder ? palette.textSecondary : color)}
+        >
+          <Popup>{popupContent}</Popup>
+        </Marker>
+      )}
+    </>
   );
 }
