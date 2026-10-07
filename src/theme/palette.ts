@@ -19,6 +19,7 @@ export interface Palette {
   textSecondary: string;
   border: string;
   terracottaDecorative: string;
+  transportFerry: string;
 }
 
 export const lightPalette: Palette = {
@@ -37,6 +38,7 @@ export const lightPalette: Palette = {
   textSecondary: "#645c50",
   border: "#dcd3c4",
   terracottaDecorative: "#c67139",
+  transportFerry: "#2d7d6e",
 };
 
 export const darkPalette: Palette = {
@@ -55,6 +57,7 @@ export const darkPalette: Palette = {
   textSecondary: "#cbc2b3",
   border: "#5b5546",
   terracottaDecorative: "#e08a4f",
+  transportFerry: "#4db8a3",
 };
 
 export function getPalette(resolvedTheme: "light" | "dark"): Palette {

@@ -91,6 +91,7 @@ export function buildKmByCountry(stops: Stop[], segments: RouteSegment[]): KmByC
   for (const segment of segments) {
     const to = stopsById.get(segment.toId);
     if (!to || to.status !== "visite") continue;
+    if (segment.mode && segment.mode !== "road") continue; // ferry/train/plane : distance à vol d'oiseau, pas des km roulés
     const country = to.country ?? "Pays inconnu";
     totals.set(country, (totals.get(country) ?? 0) + segment.distanceMeters / 1000);
   }

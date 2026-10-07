@@ -3,7 +3,7 @@
 // agrégations par catégorie, et estimation carburant reliée au module Carte.
 
 import { getCachedSegment, listStops } from "./db";
-import type { BudgetPlan, Category, Expense } from "./types";
+import type { BudgetPlan, Category, Expense, SegmentTransport } from "./types";
 
 // -- Semaines ISO 8601 (lundi → dimanche) -----------------------------------
 
@@ -189,7 +189,7 @@ export function buildWeeklyRecap(
 
 // -- Lien avec le module Carte : coût carburant ------------------------------
 
-/** Somme des distances des segments dont l'étape d'arrivée est marquée "visité". */
+/** Somme des distances routières (mode "road" uniquement) des segments dont l'étape d'arrivée est marquée "visité" — ferry/train/plane sont exclus (distance à vol d'oiseau, non roulée). */
 export async function getVisitedKm(): Promise<number> {
   const stops = await listStops();
   if (stops.length < 2) return 0;
@@ -200,9 +200,16 @@ export async function getVisitedKm(): Promise<number> {
     const to = stops[i + 1];
     if (to.status !== "visite") continue;
     const segment = await getCachedSegment(from.id, to.id);
-    if (segment) totalMeters += segment.distanceMeters;
+    if (segment && (!segment.mode || segment.mode === "road")) {
+      totalMeters += segment.distanceMeters;
+    }
   }
   return totalMeters / 1000;
+}
+
+/** Somme des coûts de transport (ferry/train/plane) convertis en euros — estimation prévisionnelle distincte des dépenses réelles. */
+export function estimateOtherTransportCostEUR(transports: SegmentTransport[]): number {
+  return transports.reduce((sum, t) => sum + (t.costAmountEUR ?? 0), 0);
 }
 
 export function estimateFuelCost(
