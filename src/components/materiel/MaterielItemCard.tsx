@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { MaterielItem, MaterielItemStatus, Task } from "../../lib/types";
 import { MATERIEL_STATUS_LABELS, materielStatusColor } from "../../lib/materielCalc";
 import { MATERIEL_DEJA_POSSEDE_COLOR, STATUS_TEXT_ON_COLOR } from "../../lib/statusColors";
+import { IconCheck } from "../icons/Icons";
 import "./MaterielItemCard.css";
 
 // Les 3 statuts d'achat historiques restent le rang principal, inchangé.
@@ -43,7 +44,9 @@ export function MaterielItemCard({
           <h4
             className={
               "materiel-item-card__name" +
-              (item.status === "achete" ? " materiel-item-card__name--done" : "")
+              (item.status === "achete" || item.status === "deja-possede"
+                ? " materiel-item-card__name--done"
+                : "")
             }
           >
             {item.name || "Sans nom"}
@@ -105,6 +108,7 @@ export function MaterielItemCard({
           }
           title="Objet déjà en main, jamais acheté pour le voyage"
         >
+          {item.status === "deja-possede" && <IconCheck />}
           Déjà possédé
         </button>
       </div>

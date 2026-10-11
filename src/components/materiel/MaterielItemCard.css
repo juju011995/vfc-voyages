@@ -105,9 +105,14 @@
   font-weight: 800;
 }
 
-/* "Déjà possédé" : case à part, plus discrète que les 3 statuts principaux — alignée à droite, ne s'affiche pas en pleine largeur pour ne pas rivaliser visuellement avec eux. */
+/* "Déjà possédé" : case à part, plus discrète que les 3 statuts principaux
+   tant qu'elle n'est pas active (contour pointillé) — mais une fois active,
+   aussi lisible que "Acheté" : pastille pleine, texte gras, petite coche. */
 .materiel-item-card__deja-possede {
   align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 1.5px dashed var(--color-border);
   border-radius: var(--radius-pill);
   background: none;
@@ -119,7 +124,14 @@
   cursor: pointer;
 }
 
+.materiel-item-card__deja-possede svg {
+  flex: 0 0 auto;
+}
+
 .materiel-item-card__deja-possede.is-active {
   border-style: solid;
+  border-width: 1.5px;
+  padding: 4px 11px;
+  font-size: 10.5px;
   font-weight: 800;
 }

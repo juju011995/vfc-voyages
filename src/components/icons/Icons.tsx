@@ -34,6 +34,21 @@ export function IconVan() {
   );
 }
 
+/** Coche simple — statuts "actif/validé" affichés en texte plutôt qu'en icône de module (ex. pastille "Déjà possédé"). */
+export function IconCheck() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
+      <path
+        d="M4.5 12.5 9 17l10.5-11"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** Mode de transport "ferry". */
 export function IconFerry() {
   return (

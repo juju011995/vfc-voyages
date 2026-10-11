@@ -16,6 +16,7 @@ import {
   purchaseAfterEmbarkmentChange,
 } from "../../lib/materielCalc";
 import { STATUS_TEXT_ON_COLOR } from "../../lib/statusColors";
+import { IconCheck } from "../icons/Icons";
 import "./MaterielItemEditor.css";
 
 interface MaterielItemEditorProps {
@@ -213,6 +214,7 @@ export function MaterielItemEditor({
                 }
                 onClick={() => handleStatusClick("deja-possede")}
               >
+                {active && <IconCheck />}
                 {MATERIEL_STATUS_LABELS["deja-possede"]}
               </button>
             );
