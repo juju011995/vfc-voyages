@@ -5,7 +5,7 @@
 // que la connexion revient. Seuls la recherche de destination, le calcul
 // d'itinéraire et les taux de change nécessitent une connexion active.
 
-import { get, set, setMany, del, keys, clear } from "./kv";
+import { get, set, setMany, del, delMany, keys, clear } from "./kv";
 import type {
   AdminDocument,
   AppSettings,
@@ -933,6 +933,44 @@ export async function deleteMaterielItem(id: string): Promise<void> {
     const { linkedMaterielItemId, ...rest } = linkedTask;
     await set(taskKey(linkedTask.id), { ...rest, updatedAt: Date.now() });
   }
+}
+
+/**
+ * Écrit en une seule opération groupée (voir setMany dans kv.ts, par lots de
+ * 400 sous la limite Firestore de 500 écritures/batch) les items et
+ * catégories issus d'un import en masse — chaque item reste son propre
+ * document (comme pour un ajout manuel), donc aucun risque de dépasser la
+ * taille max d'un document Firestore même avec une centaine d'items.
+ * Purement additif : n'importe quel item/catégorie déjà existant n'est
+ * jamais touché.
+ */
+export async function importMaterielItems(
+  items: MaterielItem[],
+  categories: MaterielCategory[],
+): Promise<void> {
+  const entries: Array<[string, unknown]> = [
+    ...categories.map((c) => [materielCategoryKey(c.id), c] as [string, unknown]),
+    ...items.map((i) => [materielItemKey(i.id), i] as [string, unknown]),
+  ];
+  await setMany(entries);
+}
+
+/**
+ * Annule un import en masse : supprime uniquement les items dont les id ont
+ * été créés par cet import, puis chacune des catégories créées par lui SI
+ * elle est encore vide (aucun item, importé ou ajouté depuis à la main, ne
+ * la référence) — ne touche à rien d'autre.
+ */
+export async function undoMaterielImport(
+  createdItemIds: string[],
+  createdCategoryIds: string[],
+): Promise<void> {
+  await delMany(createdItemIds.map(materielItemKey));
+  if (createdCategoryIds.length === 0) return;
+  const remainingItems = await listMaterielItems();
+  const stillUsedCategoryIds = new Set(remainingItems.map((i) => i.categoryId));
+  const emptyCategoryIds = createdCategoryIds.filter((id) => !stillUsedCategoryIds.has(id));
+  await delMany(emptyCategoryIds.map(materielCategoryKey));
 }
 
 // ---------------------------------------------------------------------------

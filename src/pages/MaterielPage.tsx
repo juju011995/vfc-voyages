@@ -7,6 +7,7 @@ import {
   saveMaterielCategory,
   saveMaterielItem,
   saveTask,
+  undoMaterielImport,
 } from "../lib/db";
 import { pickNextTagColor } from "../lib/tagColors";
 import {
@@ -36,6 +37,11 @@ import { MaterielSummaryCard } from "../components/budget/MaterielSummaryCard";
 import { MaterielItemList } from "../components/materiel/MaterielItemList";
 import { MaterielItemEditor } from "../components/materiel/MaterielItemEditor";
 import { MaterielChecklist } from "../components/materiel/MaterielChecklist";
+import {
+  MaterielImportModal,
+  type MaterielImportResult,
+} from "../components/materiel/MaterielImportModal";
+import { IconImport } from "../components/icons/Icons";
 import "./MaterielPage.css";
 
 type MaterielView = "achats" | "embarquer";
@@ -70,6 +76,9 @@ export function MaterielPage() {
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | undefined>();
   const [autoSwitchNotice, setAutoSwitchNotice] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importResult, setImportResult] = useState<MaterielImportResult | null>(null);
+  const [undoingImport, setUndoingImport] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -87,6 +96,19 @@ export function MaterielPage() {
 
   async function refreshItemsAndTasks() {
     const [freshItems, freshTasks] = await Promise.all([listMaterielItems(), listTasks()]);
+    setItems(freshItems);
+    setTasks(freshTasks);
+  }
+
+  // Comme refreshItemsAndTasks, mais recharge aussi les catégories — utilisé
+  // après un import en masse, qui peut en créer de nouvelles.
+  async function refreshAll() {
+    const [freshCategories, freshItems, freshTasks] = await Promise.all([
+      listMaterielCategories(),
+      listMaterielItems(),
+      listTasks(),
+    ]);
+    setCategories(freshCategories);
     setItems(freshItems);
     setTasks(freshTasks);
   }
@@ -306,6 +328,25 @@ export function MaterielPage() {
     await refreshItemsAndTasks();
   }
 
+  // -- Import en masse ---------------------------------------------------------
+  async function handleImported(result: MaterielImportResult) {
+    setShowImportModal(false);
+    setImportResult(result);
+    await refreshAll();
+  }
+
+  async function handleUndoImport() {
+    if (!importResult) return;
+    setUndoingImport(true);
+    try {
+      await undoMaterielImport(importResult.createdItemIds, importResult.createdCategoryIds);
+      setImportResult(null);
+      await refreshAll();
+    } finally {
+      setUndoingImport(false);
+    }
+  }
+
   if (!loaded) {
     return <p className="materiel-page__loading">Chargement…</p>;
   }
@@ -336,6 +377,25 @@ export function MaterielPage() {
       </div>
 
       {autoSwitchNotice && <p className="materiel-page__notice">{autoSwitchNotice}</p>}
+
+      {importResult && (
+        <p className="materiel-page__notice materiel-page__notice--import">
+          {importResult.addedCount} objet(s) ajouté(s)
+          {importResult.ignoredCount > 0 ? `, ${importResult.ignoredCount} ignoré(s)` : ""}
+          {importResult.newCategoriesCount > 0
+            ? `, ${importResult.newCategoriesCount} nouvelle(s) catégorie(s) créée(s)`
+            : ""}
+          .{" "}
+          <button
+            type="button"
+            className="materiel-page__undo-import"
+            onClick={handleUndoImport}
+            disabled={undoingImport}
+          >
+            {undoingImport ? "Annulation…" : "Annuler cet import"}
+          </button>
+        </p>
+      )}
 
       <TagFilter
         items={categories}
@@ -376,13 +436,24 @@ export function MaterielPage() {
             })}
           </div>
 
-          <button
-            type="button"
-            className="materiel-page__categories-toggle"
-            onClick={() => setShowCategoryManager((v) => !v)}
-          >
-            {showCategoryManager ? "Masquer la gestion des catégories" : "Gérer les catégories"}
-          </button>
+          <div className="materiel-page__toolbar">
+            <button
+              type="button"
+              className="materiel-page__categories-toggle"
+              onClick={() => setShowCategoryManager((v) => !v)}
+            >
+              {showCategoryManager ? "Masquer la gestion des catégories" : "Gérer les catégories"}
+            </button>
+
+            <button
+              type="button"
+              className="btn btn--primary materiel-page__import-button"
+              onClick={() => setShowImportModal(true)}
+            >
+              <IconImport />
+              Importer une liste
+            </button>
+          </div>
 
           {showCategoryManager && (
             <TagManager
@@ -464,6 +535,15 @@ export function MaterielPage() {
             onUnlinkTask={() => handleUnlinkTask(editingItem.id)}
           />
         </div>
+      )}
+
+      {showImportModal && (
+        <MaterielImportModal
+          existingItems={items}
+          existingCategories={categories}
+          onClose={() => setShowImportModal(false)}
+          onImported={handleImported}
+        />
       )}
     </div>
   );
