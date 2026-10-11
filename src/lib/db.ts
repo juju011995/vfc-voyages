@@ -36,7 +36,12 @@ import type {
 } from "./types";
 import { pickNextTagColor } from "./tagColors";
 import { getBorderChecklistFor } from "./lokiData";
-import { ITEM_STATUS_TO_TASK_STATUS, TASK_STATUS_TO_ITEM_STATUS } from "./materielCalc";
+import {
+  effectiveEmbarkmentStatus,
+  embarkmentAfterPurchaseChange,
+  ITEM_STATUS_TO_TASK_STATUS,
+  TASK_STATUS_TO_ITEM_STATUS,
+} from "./materielCalc";
 
 // Une seule collection Firestore "kv" pour toute l'app : les clés préfixées
 // par module évitent d'avoir à gérer des sous-collections par type.
@@ -536,9 +541,16 @@ export async function saveTask(task: Task): Promise<void> {
     const item = await get<MaterielItem>(materielItemKey(task.linkedMaterielItemId));
     const mappedStatus = TASK_STATUS_TO_ITEM_STATUS[task.status];
     if (item && item.status !== mappedStatus) {
+      // Le changement de statut d'achat déclenché par la tâche suit la même
+      // règle de cohérence que partout ailleurs (ex. tâche "faite" → item
+      // "acheté" → embarquement avancé à "possédé" s'il était "à prendre").
+      const embarkmentStatus = embarkmentAfterPurchaseChange(
+        effectiveEmbarkmentStatus(item),
+        mappedStatus,
+      );
       await set(
         materielItemKey(item.id),
-        { ...item, status: mappedStatus, updatedAt: Date.now() },
+        { ...item, status: mappedStatus, embarkmentStatus, updatedAt: Date.now() },
       );
     }
   }

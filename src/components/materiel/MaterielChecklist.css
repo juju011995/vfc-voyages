@@ -1,0 +1,203 @@
+.materiel-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.materiel-checklist__progress {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.materiel-checklist__progress-bar {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.materiel-checklist__progress-fill {
+  height: 100%;
+  background: var(--color-status-fait, #56633f);
+  transition: width 0.3s ease;
+}
+
+.materiel-checklist__progress-label {
+  margin: 8px 0 2px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.materiel-checklist__progress-detail {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.materiel-checklist__empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 24px 0;
+}
+
+.materiel-checklist__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.materiel-checklist__group-title {
+  margin: 0;
+  display: inline-block;
+  align-self: flex-start;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.materiel-checklist__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.materiel-checklist__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  flex-wrap: wrap;
+}
+
+/* Zone tactile d'au moins 44px, même si la case dessinée est plus petite —
+   facile à viser au doigt (utilisation dans le véhicule, sur téléphone). */
+.materiel-checklist__checkbox {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px;
+  cursor: pointer;
+}
+
+/* Case dessinée à la main (appearance: none) plutôt que le rendu natif du
+   navigateur : un checkbox natif non cochée hérite d'un contour fin qui se
+   fond dans un fond sombre — ici la bordure est toujours visible, dans les
+   deux thèmes, et le remplissage vert + coche n'apparaissent qu'une fois
+   cochée. */
+.materiel-checklist__checkbox input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  flex: 0 0 auto;
+  border: 2.5px solid var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  cursor: pointer;
+  position: relative;
+}
+
+/* Vert fixe (pas une variable de thème) : le vert "fait" du thème est tantôt
+   sombre, tantôt clair selon le mode, ce qui ferait perdre le contraste de
+   la coche blanche dans l'un des deux — ce vert-ci reste assez sombre pour
+   une coche blanche lisible en clair ET en sombre. */
+.materiel-checklist__checkbox input:checked {
+  background: #2f6b3b;
+  border-color: #2f6b3b;
+}
+
+.materiel-checklist__checkbox input:checked::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 7px;
+  height: 12px;
+  border: solid #ffffff;
+  border-width: 0 2.5px 2.5px 0;
+  transform: translate(-50%, -55%) rotate(45deg);
+}
+
+.materiel-checklist__checkbox input:focus-visible {
+  outline: 2px solid var(--color-action);
+  outline-offset: 2px;
+}
+
+.materiel-checklist__row-info {
+  flex: 1 1 140px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.materiel-checklist__row-name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.materiel-checklist__row-name--done {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+}
+
+.materiel-checklist__row-qty {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.materiel-checklist__row-toggle {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.materiel-checklist__row-toggle button {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: none;
+  padding: 6px 10px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.materiel-checklist__row-toggle button.is-active {
+  font-weight: 800;
+}
+
+@media (max-width: 480px) {
+  .materiel-checklist__row-toggle {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .materiel-checklist__row-toggle button {
+    flex: 1;
+  }
+}
