@@ -80,6 +80,14 @@ export async function setMany(entries: Array<[string, unknown]>): Promise<void> 
   }
 }
 
+export async function delMany(keysToDelete: string[]): Promise<void> {
+  for (const batchKeys of chunk(keysToDelete, BATCH_SIZE)) {
+    const batch = writeBatch(firestore);
+    for (const key of batchKeys) batch.delete(kvDoc(key));
+    batch.commit().catch(logWriteError("delMany", `${batchKeys.length} clés`));
+  }
+}
+
 export async function clear(): Promise<void> {
   const snap = await getDocs(collection(firestore, KV_COLLECTION));
   for (const batchDocs of chunk(snap.docs, BATCH_SIZE)) {

@@ -34,6 +34,28 @@ export function IconVan() {
   );
 }
 
+/** Import de fichier (flèche vers un plateau) — bouton "Importer une liste" du module Matériel. */
+export function IconImport() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+      <path
+        d="M12 3v11m0 0-4-4m4 4 4-4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** Coche simple — statuts "actif/validé" affichés en texte plutôt qu'en icône de module (ex. pastille "Déjà possédé"). */
 export function IconCheck() {
   return (
