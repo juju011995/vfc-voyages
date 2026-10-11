@@ -334,7 +334,18 @@ export interface LokiCountrySettings {
 // les deux sens par la couche de stockage (voir saveTask/saveMaterielItem
 // dans src/lib/db.ts), quel que soit le côté modifié.
 
-export type MaterielItemStatus = "a-acheter" | "en-cours" | "achete";
+/** "deja-possede" : objet qu'on a déjà, jamais acheté pour le voyage — sans prix, exclu de tous les totaux du budget matériel. */
+export type MaterielItemStatus = "a-acheter" | "en-cours" | "achete" | "deja-possede";
+
+/**
+ * Statut d'embarquement — indépendant du statut d'achat : sert de checklist
+ * "ce qu'on charge dans la cellule", à cocher au fur et à mesure.
+ * "a-prendre" (défaut) → "possede" (en main, pas encore rangé) → "installe"
+ * (rangé dans la cellule, coché). Les règles de cohérence entre les deux
+ * statuts (ex. passer "Acheté" avance l'embarquement à "Possédé") vivent
+ * dans materielCalc.ts, pas ici.
+ */
+export type MaterielEmbarkmentStatus = "a-prendre" | "possede" | "installe";
 
 export interface MaterielCategory {
   id: string;
@@ -353,9 +364,15 @@ export interface MaterielItem {
   categoryId: string;
   quantity: number;
   status: MaterielItemStatus;
-  /** Prix total de la ligne (pas un prix unitaire), en euros — optionnel tant que non acheté. */
+  /** Prix total de la ligne (pas un prix unitaire), en euros — optionnel tant que non acheté, toujours absent pour "deja-possede". */
   priceEUR?: number;
   notes?: string;
+  /**
+   * Absent sur les items créés avant cette fonctionnalité : lire via
+   * effectiveEmbarkmentStatus() (materielCalc.ts), jamais directement, pour
+   * retomber sur une valeur par défaut cohérente sans migration de données.
+   */
+  embarkmentStatus?: MaterielEmbarkmentStatus;
   createdAt: number;
   updatedAt: number;
 }

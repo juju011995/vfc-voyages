@@ -75,11 +75,17 @@
   color: var(--color-text);
 }
 
+.materiel-item-card__status-row {
+  padding: 8px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .materiel-item-card__status-toggle {
   display: flex;
   gap: 5px;
-  padding: 8px;
-  border-top: 1px solid var(--color-border);
 }
 
 .materiel-item-card__status-toggle button {
@@ -96,5 +102,24 @@
 }
 
 .materiel-item-card__status-toggle button.is-active {
+  font-weight: 800;
+}
+
+/* "Déjà possédé" : case à part, plus discrète que les 3 statuts principaux — alignée à droite, ne s'affiche pas en pleine largeur pour ne pas rivaliser visuellement avec eux. */
+.materiel-item-card__deja-possede {
+  align-self: flex-end;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-pill);
+  background: none;
+  padding: 3px 10px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.materiel-item-card__deja-possede.is-active {
+  border-style: solid;
   font-weight: 800;
 }

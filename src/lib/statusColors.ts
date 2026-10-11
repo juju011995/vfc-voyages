@@ -18,3 +18,12 @@ export const STATUS_STAGE_COLOR: Record<StatusStage, string> = {
 
 /** Texte lisible sur une pastille pleine (statut actif) — fixe, comme TAG_TEXT_ON_COLOR. */
 export const STATUS_TEXT_ON_COLOR = "#3a2f22";
+
+/**
+ * Teinte sobre et neutre (sauge) pour le statut d'achat "Déjà possédé" du
+ * module Matériel — volontairement hors de STATUS_STAGE_COLOR : ce n'est pas
+ * une 4e étape d'avancement (à faire/en cours/fait), juste une catégorie à
+ * part ("je l'ai déjà, rien à acheter"), donc pas de StatusStage partagé
+ * avec le module Tâches pour elle.
+ */
+export const MATERIEL_DEJA_POSSEDE_COLOR = "#C9D1BB";
